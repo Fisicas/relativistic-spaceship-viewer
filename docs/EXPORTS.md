@@ -1,5 +1,11 @@
 # Scientific exports and portable scenes
 
+Version 0.2.2 embeds a selected named reference separately from the sky catalog,
+including its full values and provenance. Reference crosses are annotations and
+are excluded from the measured-source counts and NPZ catalog arrays. Older
+scenes without this optional field still load; older application versions may
+reject scenes containing the new presentation field.
+
 The Export dialog creates a new `name_v01`, `name_v02`, etc. folder under the
 chosen parent. Existing exports are never overwritten. Choose 4K landscape
 (3840 x 2160), Full HD (1920 x 1080), or square (2400 x 2400). The Python API can

@@ -1,6 +1,7 @@
 """Presentation settings do not change catalog selection or the Lorentz boost."""
 from dataclasses import dataclass
 import math
+from .targets import ReferenceTarget
 
 
 @dataclass(frozen=True)
@@ -10,8 +11,12 @@ class Presentation:
     max_labels: int = 12
     marker_scale: float = .85
     selected_row: int | None = None
+    reference_target: ReferenceTarget | None = None
 
     def __post_init__(self):
+        if self.reference_target is not None:
+            if not isinstance(self.reference_target, ReferenceTarget) or self.selected_row is not None:
+                raise ValueError('Select either a named reference or a loaded catalog row.')
         if type(self.max_labels) is not int or not 0 <= self.max_labels <= 40:
             raise ValueError('Label limit must be an integer in [0, 40].')
         if not math.isfinite(self.marker_scale) or not .1 <= self.marker_scale <= 3.:

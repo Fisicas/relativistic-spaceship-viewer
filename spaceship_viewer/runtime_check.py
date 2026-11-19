@@ -85,6 +85,16 @@ def run(output):
         axes=viewer.panels[-1]['ax']
         check(abs(axes.bbox.width/axes.bbox.height-16/9)<1e-9,'focused viewport is 16:9')
         viewer.focus_sky(False)
+        from .catalog import StarCatalog,CatalogMetadata
+        fixture=StarCatalog(['HIP diagnostic fixture'],[1.],[0.],[2.],[np.nan],[np.nan],
+                            metadata=CatalogMetadata(source='Synthetic offline installation fixture'))
+        viewer.apply_catalog(fixture,'Offline catalog fixture')
+        viewer.select_named_target(16)
+        viewer.refresh()
+        check(viewer.object_combo.count()==33 and viewer.object_name.text()=='Pollux',
+              'named picker remains the original 33 with an external catalog')
+        check(viewer.catalog.n==1 and viewer.presentation.reference_target.name=='Pollux',
+              'reference target is separate from loaded measurements')
         with tempfile.TemporaryDirectory(prefix='rsv-selftest-') as directory:
             figure=export_scene(directory,'probe',catalog,state,Presentation(), 'Offline installation check',
                                 width=960,height=720,dpi=100)
@@ -93,6 +103,11 @@ def run(output):
                   'portable export numerical round trip')
             check((figure/'scene.pdf').read_bytes().startswith(b'%PDF'),'PDF export')
             check((figure/'scene.svg').is_file(),'SVG export')
+            reference=export_scene(directory,'reference',viewer.catalog,viewer.view_state,viewer.presentation,
+                                   'Reference target diagnostic',width=960,height=720,dpi=100)
+            background,_,appearance,_=load_document(reference/'scene.json')
+            check(background.n==1 and appearance.reference_target.name=='Pollux',
+                  'reference export preserves target and separate catalog')
         # The standalone distribution promises this optional feature without a
         # separate pip step. Import it here; do not issue a live catalog query.
         from astroquery.vizier import Vizier

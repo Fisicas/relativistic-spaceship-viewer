@@ -63,7 +63,7 @@ def export_scene(parent, stem, catalog, state, presentation, title, *, width=384
             numerical[prefix + '_visible_catalog_rows'] = panel['rows']
         np.savez_compressed(folder / 'scene_data.npz', **numerical)
     fingerprints = {}
-    for name in ('__init__.py', 'catalog.py', 'geometry.py', 'relativity.py', 'state.py', 'scene.py', 'display.py', 'presentation.py', 'plotting.py', 'session.py', 'exporting.py'):
+    for name in ('__init__.py', 'catalog.py', 'geometry.py', 'relativity.py', 'state.py', 'scene.py', 'display.py', 'presentation.py', 'targets.py', 'plotting.py', 'session.py', 'exporting.py'):
         source = Path(__file__).parent / name
         fingerprints[name] = hashlib.sha256(source.read_bytes()).hexdigest()
     artifacts = {file.name: hashlib.sha256(file.read_bytes()).hexdigest() for file in sorted(folder.iterdir()) if file.name != 'INCOMPLETE.txt'}

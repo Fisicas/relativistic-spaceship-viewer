@@ -1,6 +1,6 @@
 # Development and reproduction
 
-Version **0.2.1** is an unpublished local release candidate with the physics
+Version **0.2.2** is an unpublished local release candidate with the physics
 foundation, Qt UI, scientific exports, and Windows installation/update support.
 Use the completion report for the actual checks and final asset hashes. The
 version string alone does not indicate a Git tag or published release.
@@ -108,7 +108,8 @@ area scale are presentation choices, not additional physical transforms.
 
 ## Build and exercise the Windows package
 
-The 0.2.1 patch adds `navigation.py` for camera-only apparent-object targeting
+`targets.py` stores portable named references separately from loaded catalog
+rows. `navigation.py` provides camera-only apparent-object targeting
 and a 16:9 independent-angular-axis FOV. `catalog_network.py` provides explicit
 HTTPS mirror fallback without global Astroquery configuration changes.
 `tools/check_hipparcos_live.py --output-dir <new-folder>` deliberately contacts

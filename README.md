@@ -4,7 +4,7 @@ Explore the instantaneous apparent sky of an observer moving at a significant
 fraction of the speed of light. Aberration changes the directions; the Doppler
 factor changes the frequency. The physics stays visible alongside the view.
 
-**0.2.1 — local release candidate, unpublished.** The Qt interface, reproducible
+**0.2.2 — local release candidate, unpublished.** The Qt interface, reproducible
 exports, Windows installer, and managed updater are implemented. The prepared
 Windows binaries are unsigned; no GitHub release has been published.
 
@@ -24,6 +24,8 @@ Windows binaries are unsigned; no GitHub release has been published.
   heading, Doppler factor, and a clearly labeled 550 nm wavelength example.
   Selection centers its apparent direction without steering. Choose
   **Custom: [object]** in the heading presets to steer explicitly.
+- The inspector dropdown keeps the original 33 named targets even with the
+  full Hipparcos sky loaded. Individual catalog sources remain clickable.
 - **Focus sky** provides a 16:9 angular viewport with equal angular scales;
   visibility is recomputed, and leaving focus restores the previous FOV.
 - Import an explicitly labeled CSV catalog or optionally fetch Hipparcos.
@@ -55,7 +57,7 @@ remain preserved in `docs/images/` as historical assets.
 ## Run locally
 
 For Windows without Python or Git, run the prepared
-`relativistic-spaceship-viewer-0.2.1-windows-x64-setup.exe`. It installs for the
+`relativistic-spaceship-viewer-0.2.2-windows-x64-setup.exe`. It installs for the
 current user and adds a Start menu shortcut. In a checkout, `Install_Viewer.cmd`
 uses a prepared installer in `dist\release`, or downloads the latest published
 stable installer after verifying its GitHub asset digest. A new online release
@@ -137,5 +139,5 @@ or calibrated radiometry. See [development instructions](docs/DEVELOPMENT.md).
 MIT License. See [LICENSE](LICENSE). Windows builds include separate dependency
 license texts and an inventory under `licenses`. See the
 [local release checklist](docs/RELEASE_CHECKLIST.md) and
-[release notes](RELEASE_NOTES_v0.2.1.md) for the publication boundary and remaining
+[release notes](RELEASE_NOTES_v0.2.2.md) for the publication boundary and remaining
 clean-machine/live-update checks.

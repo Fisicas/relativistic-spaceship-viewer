@@ -9,6 +9,8 @@ from matplotlib.transforms import Bbox
 from matplotlib.font_manager import FontProperties
 from .scene import compute_scene
 from .relativity import lorentz_factor
+from .relativity import aberrate
+from .geometry import project_directions
 
 BACKGROUND = '#080e19'
 FOREGROUND = '#d7e3f1'
@@ -37,6 +39,16 @@ def draw_view(ax, scene, state, presentation, original_rows, selected=None):
         ax.scatter(x, y, s=np.clip(areas * 4.5, 2, 900), c=scene.rgb, alpha=.08, linewidths=0, zorder=2)
         ax.scatter(x, y, s=np.clip(areas * 2., 1, 500), c=scene.rgb, alpha=.13, linewidths=0, zorder=2)
     points = ax.scatter(x, y, s=areas, c=scene.rgb, alpha=.97, linewidths=0, zorder=3)
+    if presentation.reference_target is not None:
+        target = presentation.reference_target
+        apparent, _, _ = aberrate(target.as_catalog().vectors, state.velocity_direction, state.beta)
+        tx, ty, inside = project_directions(apparent, state.camera, state.hfov_deg, state.vfov_deg)
+        if inside[0]:
+            # Navigation annotation, not another measured source or detection.
+            ax.plot(tx, ty, marker='+', markersize=14, color=ACCENT, linestyle='none', zorder=6)
+            if state.labels:
+                ax.annotate(target.name+' · reference', (tx[0], ty[0]), xytext=(9, 10),
+                            textcoords='offset points', color=ACCENT, fontsize=8, annotation_clip=True, zorder=6)
     hit = np.flatnonzero(original_rows == selected) if selected is not None else []
     if len(hit):
         i = hit[0]

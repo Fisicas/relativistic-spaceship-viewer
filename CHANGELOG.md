@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2 — unpublished named-target picker fix, 2026-11-19
+
+- Keep the original 33 named targets in the inspector dropdown when Hipparcos
+  or another catalog is loaded; retain click inspection of all plotted sources.
+- Preserve reference coordinates/provenance separately from catalog rows and
+  embed reference selections in portable scenes/exports. Add a labeled cross
+  as a navigation annotation without changing scientific counts or arrays.
+- Keep camera-only selection, explicit custom steering, and 16:9 behavior.
+
 ## 0.2.1 — unpublished local interaction/service patch, 2026-11-19
 
 - Center inspector selections on their apparent direction without changing

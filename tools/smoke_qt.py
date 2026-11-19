@@ -125,6 +125,42 @@ def main():
             check(viewer.catalog.n == 1 and viewer.catalog.name[0] == 'Synthetic', 'saved scene reopens with embedded catalog')
         viewer.restore_demo()
         settle()
+        from spaceship_viewer.catalog import StarCatalog,CatalogMetadata
+        from spaceship_viewer.demo_catalog import built_in_catalog
+        from spaceship_viewer.session import make_document,decode_document
+        background = StarCatalog(['HIP fixture'],[200.],[0.],[2.],[np.nan],[np.nan],
+            metadata=CatalogMetadata(source='Synthetic Hipparcos-like background; not observational data'))
+        viewer.apply_catalog(background,'Synthetic catalog fixture')
+        settle()
+        expected = built_in_catalog().name.tolist()
+        check(viewer.object_combo.count()==33 and [viewer.object_combo.itemText(i) for i in range(33)]==expected,
+              'loaded catalog retains the original 33 named targets in original order')
+        row=expected.index('Pollux')
+        heading=viewer.view_state.velocity_direction.copy()
+        viewer.object_combo.activated.emit(row)
+        settle()
+        check(viewer.object_name.text()=='Pollux' and viewer.presentation.reference_target is not None,
+              'named target remains selectable without a matching loaded catalog row')
+        check(viewer.catalog is background and viewer.catalog.n==1 and viewer.presentation.selected_row is None,
+              'reference selection never appends or relabels catalog measurements')
+        check(np.array_equal(heading,viewer.view_state.velocity_direction) and not viewer.view_state.camera_locked,
+              'named reference centers without changing velocity')
+        check('NAMED REFERENCE' in viewer.object_details.toPlainText() and viewer.preset.itemText(3)=='Custom: Pollux',
+              'reference provenance and custom heading are explicit')
+        document=make_document(viewer.catalog,viewer.view_state,viewer.presentation)
+        _,_,saved,_=decode_document(json.loads(json.dumps(document,allow_nan=False)))
+        check(saved.reference_target.name=='Pollux','reference selection survives portable scene round trip')
+        viewer.apply_preset(3)
+        settle()
+        check(abs(viewer.view_state.heading_ra_deg-116.329)<1e-9,'named reference custom heading steers to original coordinates')
+        viewer.select_row(0)
+        settle()
+        check(viewer.object_name.text()=='HIP fixture' and viewer.presentation.reference_target is None
+              and viewer.object_combo.currentIndex()==-1 and viewer.object_combo.count()==33,
+              'clicked catalog object remains inspectable without enlarging named picker')
+        viewer.restore_demo()
+        viewer.reset()
+        settle()
         with patch.object(module, 'fetch_hipparcos', side_effect=RuntimeError('controlled offline failure')), \
              patch.object(viewer, 'error') as error:
             old = viewer.catalog

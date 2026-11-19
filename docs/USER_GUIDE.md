@@ -40,6 +40,18 @@ they overlap; every selected visible object is still drawn.
 
 ## Inspecting an object
 
+The dropdown always contains the original **33 named stars and locations** in
+their original order, even with Hipparcos loaded. Click any plotted catalog
+star to inspect its actual measurement row without adding HIP identifiers to
+the dropdown. The three fixed heading presets remain unchanged.
+
+With an external catalog, original named selections are explicitly labeled
+navigation references using the inherited demo coordinates and approximate
+values (frame/epoch unspecified). They are not cross-identifications with the
+background catalog. A cyan reference cross marks their location and is not
+included in the source count. Saved scenes embed the selected reference values
+and provenance separately from the loaded catalog.
+
 Selecting an object centers its **apparent** direction in the moving view and
 unlocks the camera; the velocity heading and all Doppler factors stay unchanged.
 Selecting it again recenters after panning. The fourth heading choice becomes
@@ -48,7 +60,7 @@ catalog RA/Dec and lock the camera along the new velocity heading. Orion,
 Galactic Center, and Tau Ceti remain available. Manual RA/Dec entries remain
 independent; they are not mislabeled as the current inspector target.
 
-Click a star or use the catalog-object dropdown. The inspector gives rest and
+Click a star or use the named-target dropdown. The inspector gives rest and
 apparent directions, angles to the velocity heading, D, and an example wavelength
 shift. It reports the moving-observer values even when selected from the rest
 panel. A target excluded by the rest V limit stays excluded even after camera

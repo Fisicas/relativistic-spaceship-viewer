@@ -26,6 +26,7 @@ from .presentation import Presentation
 from .relativity import MAX_BETA, lorentz_factor, rest_frame_half_angle
 from .session import load_document, save_document
 from .state import ViewState
+from .targets import ReferenceTarget
 
 STYLE = '''
 QMainWindow, QWidget { background: #0e1623; color: #c8d7e8; font-family: 'Segoe UI'; font-size: 10pt; }
@@ -88,6 +89,8 @@ class Viewer(W.QMainWindow):
     def __init__(self):
         super().__init__()
         self.catalog, self.catalog_title = built_in_catalog(), 'Orion · inherited bright-star demo'
+        self.named_targets = built_in_catalog()
+        self.named_references = tuple(ReferenceTarget.from_catalog(self.named_targets, i) for i in range(self.named_targets.n))
         self.view_state, self.presentation = ViewState(), Presentation()
         self.panels = []
         self._drag = None
@@ -319,8 +322,10 @@ class Viewer(W.QMainWindow):
         inspect_layout.setContentsMargins(12, 18, 12, 12)
         inspect_layout.addWidget(label('OBJECT INSPECTOR', 'eyebrow'))
         self.object_combo = W.QComboBox()
-        self.object_combo.setPlaceholderText('Select a catalog object')
-        self.object_combo.activated.connect(lambda i: self.select_row(i if i >= 0 else None))
+        self.object_combo.setPlaceholderText('Select a named target')
+        self.object_combo.setMaxVisibleItems(12)
+        self.object_combo.activated.connect(self.select_named_target)
+        inspect_layout.addWidget(label('Original named targets · click the sky for catalog stars', 'muted', True))
         inspect_layout.addWidget(self.object_combo)
         self.object_name = label('Choose an object', 'inspectorTitle', True)
         inspect_layout.addWidget(self.object_name)
@@ -389,12 +394,12 @@ class Viewer(W.QMainWindow):
             ra, dec = ((84., -1.), (266.4168, -29.0078), (26.0170, -15.9375))[index]
             self.view_state = self.view_state.with_heading(ra, dec)
             self._schedule()
-        elif index == 3 and self.presentation.selected_row is not None:
-            row = self.presentation.selected_row
+        elif index == 3 and self._inspection_selection() is not None:
+            catalog, row, _ = self._inspection_selection()
             # Rest catalog direction defines a velocity heading. A source
             # exactly along that heading remains centered under aberration.
             self.view_state = self.view_state.with_lock(False).with_heading(
-                float(self.catalog.ra_deg[row]), float(self.catalog.dec_deg[row])).with_lock(True)
+                float(catalog.ra_deg[row]), float(catalog.dec_deg[row])).with_lock(True)
             self._schedule()
 
     def apply_heading(self):
@@ -446,12 +451,13 @@ class Viewer(W.QMainWindow):
             with QtCore.QSignalBlocker(widget):
                 widget.setValue(value)
         targets = ((84., -1.), (266.4168, -29.0078), (26.0170, -15.9375))
-        row = p.selected_row
-        self.preset.setItemText(3, f'Custom: {self.catalog.name[row]}' if row is not None else 'Custom heading')
-        if row is not None:
-            targets += ((float(self.catalog.ra_deg[row]), float(self.catalog.dec_deg[row])),)
+        selection = self._inspection_selection()
+        self.preset.setItemText(3, f'Custom: {selection[0].name[selection[1]]}' if selection else 'Custom heading')
+        if selection:
+            catalog, row, _ = selection
+            targets += ((float(catalog.ra_deg[row]), float(catalog.dec_deg[row])),)
         preset_index = next((i for i, (ra, dec) in enumerate(targets)
-                             if abs(s.heading_ra_deg-ra) < 1e-9 and abs(s.heading_dec_deg-dec) < 1e-9), -1 if row is not None else 3)
+                             if abs(s.heading_ra_deg-ra) < 1e-9 and abs(s.heading_dec_deg-dec) < 1e-9), -1 if selection else 3)
         with QtCore.QSignalBlocker(self.preset):
             self.preset.setCurrentIndex(preset_index)
         for widget, value in ((self.lock_check, s.camera_locked), (self.compare_button, p.comparison),
@@ -460,7 +466,9 @@ class Viewer(W.QMainWindow):
             with QtCore.QSignalBlocker(widget):
                 widget.setChecked(value)
         with QtCore.QSignalBlocker(self.object_combo):
-            self.object_combo.setCurrentIndex(p.selected_row if p.selected_row is not None else -1)
+            target = self._current_named_target()
+            index = next((i for i, item in enumerate(self.named_references) if item == target), -1) if target else -1
+            self.object_combo.setCurrentIndex(index)
 
     def refresh(self):
         started = time.perf_counter()
@@ -494,27 +502,64 @@ class Viewer(W.QMainWindow):
     def _populate_objects(self):
         with QtCore.QSignalBlocker(self.object_combo):
             self.object_combo.clear()
-            self.object_combo.addItems(self.catalog.name.tolist())
+            self.object_combo.addItems(self.named_targets.name.tolist())
             self.object_combo.setCurrentIndex(-1)
 
     def select_row(self, row):
         if row is not None:
             self.view_state = center_object(self.catalog, self.view_state, row)
-        self.presentation = replace(self.presentation, selected_row=row)
+        self.presentation = replace(self.presentation, selected_row=row, reference_target=None)
+        self._schedule()
+
+    def _inspection_selection(self):
+        if self.presentation.reference_target is not None:
+            return self.presentation.reference_target.as_catalog(), 0, True
+        if self.presentation.selected_row is not None:
+            return self.catalog, self.presentation.selected_row, False
+        return None
+
+    def _current_named_target(self):
+        if self.presentation.reference_target is not None:
+            return self.presentation.reference_target
+        row = self.presentation.selected_row
+        if row is not None:
+            target = ReferenceTarget.from_catalog(self.catalog, row)
+            if target in self.named_references:
+                return target
+        return None
+
+    def select_named_target(self, index):
+        if not 0 <= index < self.named_targets.n:
+            return
+        target = self.named_references[index]
+        # An exact original demo row can use its existing selection highlight.
+        # Never infer a Hipparcos match from name or proximity alone.
+        if self.catalog.metadata == self.named_targets.metadata:
+            for row in range(self.catalog.n):
+                if ReferenceTarget.from_catalog(self.catalog, row) == target:
+                    self.select_row(row)
+                    return
+        self.view_state = center_object(target.as_catalog(), self.view_state, 0)
+        self.presentation = replace(self.presentation, selected_row=None, reference_target=target)
         self._schedule()
 
     def _update_inspector(self):
-        row = self.presentation.selected_row
-        if row is None:
+        selection = self._inspection_selection()
+        if selection is None:
             self.object_name.setText('Choose an object')
             self.object_details.setHtml('<p>Select a star to see its rest and apparent directions, Doppler factor, and a wavelength example.</p>')
             return
         import html
-        info = inspect_object(self.catalog, self.view_state, row)
+        catalog, row, reference = selection
+        info = inspect_object(catalog, self.view_state, row)
         self.object_name.setText(info['name'])
         optional = lambda value, unit: f'{value:.4g} {unit}' if value is not None else 'Unknown'
-        visible = row in self.panels[-1]['rows']
-        self.object_details.setHtml(f'''<p style="color:#78d6eb">{'IN MOVING VIEW' if visible else 'OUTSIDE CURRENT SELECTION / FOV'}</p>
+        visible = not reference and row in self.panels[-1]['rows']
+        status = 'NAMED REFERENCE TARGET' if reference else 'IN MOVING VIEW' if visible else 'OUTSIDE CURRENT SELECTION / FOV'
+        provenance = ('Original demo coordinates and approximate values; frame/epoch unspecified. '
+                      'Navigation reference, not an identified Hipparcos measurement.') if reference else catalog.metadata.source
+        self.object_details.setHtml(f'''<p style="color:#78d6eb">{status}</p>
+<p>{html.escape(provenance)}</p>
 <p><b>Rest direction</b><br>RA {info['rest_ra_deg']:.6f}°<br>Dec {info['rest_dec_deg']:.6f}°</p>
 <p><b>Apparent direction</b><br>RA {info['apparent_ra_deg']:.6f}°<br>Dec {info['apparent_dec_deg']:.6f}°</p>
 <p><b>Angle to velocity</b><br>Rest {info['rest_heading_angle_deg']:.4f}°<br>Apparent {info['apparent_heading_angle_deg']:.4f}°</p>
@@ -565,9 +610,10 @@ class Viewer(W.QMainWindow):
         self._schedule()
 
     def apply_catalog(self, catalog, title):
+        target = self._current_named_target()
         self._catalog_revision += 1
         self.catalog, self.catalog_title = catalog, str(title)
-        self.presentation = replace(self.presentation, selected_row=None)
+        self.presentation = replace(self.presentation, selected_row=None, reference_target=target)
         self._populate_objects()
         self._schedule()
 

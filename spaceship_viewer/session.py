@@ -15,6 +15,7 @@ from .catalog import CatalogMetadata, ImportReport, RowIssue, StarCatalog
 from .geometry import CameraPose
 from .presentation import Presentation
 from .state import ViewState
+from .targets import ReferenceTarget
 
 SCHEMA = 'relativistic-spaceship-viewer.scene/1'
 NUMERIC_COLUMNS = ('ra_deg', 'dec_deg', 'vmag', 'bv', 'distance_pc')
@@ -61,7 +62,10 @@ def decode_document(document):
     view = dict(document['view'])
     view['camera'] = CameraPose(**view['camera'])
     state = ViewState(**view)
-    presentation = Presentation(**document['presentation'])
+    appearance = dict(document['presentation'])
+    if appearance.get('reference_target') is not None:
+        appearance['reference_target'] = ReferenceTarget.from_dict(appearance['reference_target'])
+    presentation = Presentation(**appearance)
     if presentation.selected_row is not None and presentation.selected_row >= catalog.n:
         raise ValueError('Selected object is outside the embedded catalog.')
     return catalog, state, presentation, str(document['catalog_title'])
