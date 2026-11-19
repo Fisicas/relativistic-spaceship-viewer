@@ -40,8 +40,8 @@ they overlap; every selected visible object is still drawn.
 
 ## Inspecting an object
 
-The dropdown always contains the original **33 named stars and locations** in
-their original order, even with Hipparcos loaded. Click any plotted catalog
+The dropdown contains the original **33 named stars and locations** in
+their original order, plus **Sol** as entry 34, even with Hipparcos loaded. Click any plotted catalog
 star to inspect its actual measurement row without adding HIP identifiers to
 the dropdown. The three fixed heading presets remain unchanged.
 
@@ -85,6 +85,12 @@ source path. **Export** creates a new versioned folder with figures, arrays, and
 a portable scene. See [EXPORTS.md](EXPORTS.md) for formats and verification.
 
 ## Widescreen focus
+
+For Sol, use **Frame solar disk** and the optional tracking and heading controls
+in its inspector. The fixed teaching geometry defaults to Sun RA=0°, Dec=0° at
+1 AU; it does not change distance as speed changes. Zoom reaches 0.001° to show
+small high-speed solar disks. See [SOLAR_MODEL.md](SOLAR_MODEL.md) for constants,
+ray geometry, occultation, sampling, and the neutral-fill radiometry limit.
 
 **Focus sky** hides the panels and sets each sky viewport to 16:9, keeping equal
 pixels per angular degree. The existing projection has independent atan2 axes,

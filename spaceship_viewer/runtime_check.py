@@ -91,8 +91,8 @@ def run(output):
         viewer.apply_catalog(fixture,'Offline catalog fixture')
         viewer.select_named_target(16)
         viewer.refresh()
-        check(viewer.object_combo.count()==33 and viewer.object_name.text()=='Pollux',
-              'named picker remains the original 33 with an external catalog')
+        check(viewer.object_combo.count()==34 and viewer.object_name.text()=='Pollux',
+              'named picker retains the original 33 plus Sol with an external catalog')
         check(viewer.catalog.n==1 and viewer.presentation.reference_target.name=='Pollux',
               'reference target is separate from loaded measurements')
         with tempfile.TemporaryDirectory(prefix='rsv-selftest-') as directory:
@@ -108,6 +108,25 @@ def run(output):
             background,_,appearance,_=load_document(reference/'scene.json')
             check(background.n==1 and appearance.reference_target.name=='Pollux',
                   'reference export preserves target and separate catalog')
+            viewer.select_named_target(33)
+            viewer.set_beta(.9)
+            viewer.solar_heading('away')
+            viewer.frame_solar_disk()
+            viewer.refresh()
+            from .solar import REST_RADIUS_RAD
+            check(viewer.panels[-1]['solar']['radius_rad']>REST_RADIUS_RAD,'finite solar disk enlarges for away boost')
+            sun=export_scene(directory,'solar',viewer.catalog,viewer.view_state,viewer.presentation,
+                             'Solar installation check',width=960,height=720,dpi=100)
+            _,_,solar_appearance,_=load_document(sun/'scene.json')
+            check(solar_appearance.solar.observer_distance_m==149597870700.,'solar geometry survives export round trip')
+            from dataclasses import replace
+            from .geometry import CameraPose
+            viewer.view_state=replace(viewer.view_state,beta=.99999,camera_locked=False,
+                                      camera=CameraPose.from_radec(90.,0.),hfov_deg=120.,vfov_deg=120.)
+            viewer.refresh()
+            export_scene(directory,'solar_horizon',viewer.catalog,viewer.view_state,viewer.presentation,
+                         'Large-cap solar mask check',width=960,height=720,dpi=100)
+            check(True,'large solar cap horizon rendering and export')
         # The standalone distribution promises this optional feature without a
         # separate pip step. Import it here; do not issue a live catalog query.
         from astroquery.vizier import Vizier

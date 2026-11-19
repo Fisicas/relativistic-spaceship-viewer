@@ -9,7 +9,7 @@ class ReferenceTarget:
     name: str
     ra_deg: float
     dec_deg: float
-    vmag: float
+    vmag: float | None
     bv: float | None
     distance_pc: float | None
     object_kind: str
@@ -20,6 +20,8 @@ class ReferenceTarget:
             raise ValueError('Reference target needs a name and object kind.')
         if not isinstance(self.metadata, CatalogMetadata):
             raise ValueError('Reference target needs explicit catalog provenance.')
+        if self.vmag is None and self.object_kind != 'solar_disk':
+            raise ValueError('Only the non-photometric solar model may omit V magnitude.')
         self.as_catalog()  # Reuse the scientific catalog validation.
 
     @classmethod
@@ -38,7 +40,9 @@ class ReferenceTarget:
         return cls(**value)
 
     def as_catalog(self):
-        return StarCatalog([self.name], [self.ra_deg], [self.dec_deg], [self.vmag],
+        # Solar magnitude is intentionally unknown; the zero is an internal
+        # direction-adapter placeholder, never a rendered/measured magnitude.
+        return StarCatalog([self.name], [self.ra_deg], [self.dec_deg], [0. if self.vmag is None else self.vmag],
                            [np.nan if self.bv is None else self.bv],
                            [np.nan if self.distance_pc is None else self.distance_pc],
                            metadata=self.metadata, object_kind=[self.object_kind])

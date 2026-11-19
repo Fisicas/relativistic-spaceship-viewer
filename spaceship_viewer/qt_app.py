@@ -18,9 +18,10 @@ from . import __version__
 from .catalog import load_csv, fetch_hipparcos, UnitRequiredError
 from .demo_catalog import built_in_catalog
 from .exporting import export_scene
-from .geometry import CameraPose
+from .geometry import CameraPose,unit_to_radec
 from .inspection import inspect_object
-from .navigation import center_object, widescreen_fov, WIDESCREEN_RATIO
+from .navigation import center_object, widescreen_fov, WIDESCREEN_RATIO,MIN_FOV
+from .solar import SolarSettings,solar_reference,solar_geometry,AU_M,SOLAR_RADIUS_M,REST_RADIUS_RAD
 from .plotting import draw_figure, BACKGROUND
 from .presentation import Presentation
 from .relativity import MAX_BETA, lorentz_factor, rest_frame_half_angle
@@ -90,7 +91,7 @@ class Viewer(W.QMainWindow):
         super().__init__()
         self.catalog, self.catalog_title = built_in_catalog(), 'Orion · inherited bright-star demo'
         self.named_targets = built_in_catalog()
-        self.named_references = tuple(ReferenceTarget.from_catalog(self.named_targets, i) for i in range(self.named_targets.n))
+        self.named_references = tuple(ReferenceTarget.from_catalog(self.named_targets, i) for i in range(self.named_targets.n))+(solar_reference(SolarSettings()),)
         self.view_state, self.presentation = ViewState(), Presentation()
         self.panels = []
         self._drag = None
@@ -244,7 +245,7 @@ class Viewer(W.QMainWindow):
 
         field = self.group(controls, 'FIELD & DISPLAY')
         fov = W.QFormLayout()
-        self.hfov_spin, self.vfov_spin = spin(5., 160., 45., 1, 5.), spin(5., 160., 45., 1, 5.)
+        self.hfov_spin, self.vfov_spin = spin(MIN_FOV, 160., 45., 6, 1.), spin(MIN_FOV, 160., 45., 6, 1.)
         self.hfov_spin.valueChanged.connect(lambda v: self.change(hfov_deg=v))
         self.vfov_spin.valueChanged.connect(lambda v: self.change(vfov_deg=v))
         self.mag_spin = spin(-5., 20., 8., 1, .5)
@@ -294,7 +295,7 @@ class Viewer(W.QMainWindow):
         central.setSpacing(10)
         metrics = W.QHBoxLayout()
         self.metrics = {}
-        for title, key in (('LORENTZ FACTOR', 'gamma'), ('DOPPLER RANGE', 'doppler'), ('VISIBLE / LOADED', 'count')):
+        for title, key in (('LORENTZ FACTOR', 'gamma'), ('CATALOG DOPPLER RANGE', 'doppler'), ('CATALOG VISIBLE / LOADED', 'count')):
             card = W.QFrame()
             card.setObjectName('metricCard')
             card_layout = W.QVBoxLayout(card)
@@ -332,7 +333,31 @@ class Viewer(W.QMainWindow):
         self.object_details = W.QTextBrowser()
         self.object_details.setOpenExternalLinks(False)
         inspect_layout.addWidget(self.object_details, 1)
-        inspect_layout.addWidget(label('Selecting centers the moving view and unlocks the camera; velocity stays unchanged. Choose Custom in Heading & Camera to steer. The rest-magnitude cut still applies.', 'muted', True))
+        self.solar_group=W.QGroupBox('SOL · FIXED 1 AU TEACHING SETUP')
+        solar_layout=W.QVBoxLayout(self.solar_group)
+        solar_form=W.QFormLayout()
+        self.solar_ra_spin,self.solar_dec_spin=spin(0.,359.999999,0.,6),spin(-90.,90.,0.,6)
+        solar_form.addRow('Sun RA (°)',self.solar_ra_spin)
+        solar_form.addRow('Sun Dec (°)',self.solar_dec_spin)
+        solar_layout.addLayout(solar_form)
+        solar_layout.addWidget(self.button('Apply Sun direction',self.apply_solar_direction))
+        self.solar_show_check=W.QCheckBox('Show solar disk')
+        self.solar_show_check.setToolTip('Show the photosphere and occult distant background rays behind it.')
+        self.solar_show_check.toggled.connect(lambda v:self.update_solar(enabled=v))
+        solar_layout.addWidget(self.solar_show_check)
+        self.solar_track_check=W.QCheckBox('Track Sol as boost changes')
+        self.solar_track_check.toggled.connect(lambda v:self.update_solar(track_center=v))
+        solar_layout.addWidget(self.solar_track_check)
+        solar_layout.addWidget(self.button('Frame solar disk',self.frame_solar_disk))
+        quick=W.QHBoxLayout()
+        for text,mode in (('Toward','toward'),('Away','away'),('90°','transverse')):
+            button=self.button(text,lambda checked=False,m=mode:self.solar_heading(m))
+            button.setToolTip('Set velocity heading relative to Sol; keep the disk centered.')
+            quick.addWidget(button)
+        solar_layout.addLayout(quick)
+        inspect_layout.addWidget(self.solar_group)
+        self.solar_group.hide()
+        inspect_layout.addWidget(label('Selecting centers the camera. Heading actions steer the velocity. The rest-magnitude cut applies to catalog stars.', 'muted', True))
         self.inspector.addTab(inspect_page, 'Object')
         self.physics_page = W.QTextBrowser()
         self.physics_page.setHtml('''<h3>Light, transformed</h3><p>Source directions point from observer to source. Photon momentum points the other way.</p>
@@ -377,6 +402,8 @@ class Viewer(W.QMainWindow):
             vertical = kwargs.get('vfov_deg', kwargs.get('hfov_deg', self.view_state.hfov_deg) / WIDESCREEN_RATIO)
             kwargs['hfov_deg'], kwargs['vfov_deg'] = widescreen_fov(vertical)
         self.view_state = replace(self.view_state, **kwargs)
+        if 'beta' in kwargs:
+            self._track_solar()
         self._schedule()
 
     def change_presentation(self, **kwargs):
@@ -393,6 +420,7 @@ class Viewer(W.QMainWindow):
         if 0 <= index < 3:
             ra, dec = ((84., -1.), (266.4168, -29.0078), (26.0170, -15.9375))[index]
             self.view_state = self.view_state.with_heading(ra, dec)
+            self._track_solar()
             self._schedule()
         elif index == 3 and self._inspection_selection() is not None:
             catalog, row, _ = self._inspection_selection()
@@ -400,15 +428,20 @@ class Viewer(W.QMainWindow):
             # exactly along that heading remains centered under aberration.
             self.view_state = self.view_state.with_lock(False).with_heading(
                 float(catalog.ra_deg[row]), float(catalog.dec_deg[row])).with_lock(True)
+            if self.presentation.solar is not None:
+                self.presentation=replace(self.presentation,solar=replace(self.presentation.solar,track_center=False))
             self._schedule()
 
     def apply_heading(self):
         self.view_state = self.view_state.with_heading(self.ra_spin.value(), self.dec_spin.value())
+        self._track_solar()
         with QtCore.QSignalBlocker(self.preset):
             self.preset.setCurrentIndex(3)
         self._schedule()
 
     def set_lock(self, checked):
+        if checked and self.presentation.solar is not None:
+            self.presentation=replace(self.presentation,solar=replace(self.presentation.solar,track_center=False))
         self.view_state = self.view_state.with_lock(checked)
         self._schedule()
 
@@ -442,6 +475,8 @@ class Viewer(W.QMainWindow):
 
     def _sync_widgets(self):
         s, p = self.view_state, self.presentation
+        solar=p.solar or SolarSettings()
+        self.named_references=self.named_references[:33]+(solar_reference(solar),)
         settings = ((self.beta_spin, s.beta), (self.gamma_spin, lorentz_factor(s.beta)),
                     (self.speed_slider, round(math.atanh(s.beta) / math.atanh(MAX_BETA) * 10000)),
                     (self.ra_spin, s.heading_ra_deg), (self.dec_spin, s.heading_dec_deg),
@@ -469,6 +504,13 @@ class Viewer(W.QMainWindow):
             target = self._current_named_target()
             index = next((i for i, item in enumerate(self.named_references) if item == target), -1) if target else -1
             self.object_combo.setCurrentIndex(index)
+        for widget,value in ((self.solar_ra_spin,solar.ra_deg),(self.solar_dec_spin,solar.dec_deg)):
+            with QtCore.QSignalBlocker(widget):
+                widget.setValue(value)
+        for widget,value in ((self.solar_show_check,solar.enabled),(self.solar_track_check,solar.track_center)):
+            with QtCore.QSignalBlocker(widget):
+                widget.setChecked(value)
+        self.solar_group.setVisible(p.reference_target is not None and p.reference_target.object_kind=='solar_disk')
 
     def refresh(self):
         started = time.perf_counter()
@@ -491,6 +533,8 @@ class Viewer(W.QMainWindow):
             note += 'Camera independent of velocity. '
         if self._focus_fov_before is not None:
             note += f'16:9 angular viewport · FOV {self.view_state.hfov_deg:g}° × {self.view_state.vfov_deg:g}°. '
+        if self.presentation.solar is not None and self.presentation.solar.enabled:
+            note += 'Sol: fixed 1 AU silhouette; distant catalog rays behind the photosphere are occulted. '
         self.scene_note.setText(note + 'Illustrative RGB / marker brightness; no travel or calibrated photometry.')
         self.source_text.setText(f'{self.catalog.n:,} objects · {self.catalog.metadata.coordinate_epoch}\nCompleteness unknown')
         self._update_inspector()
@@ -502,7 +546,7 @@ class Viewer(W.QMainWindow):
     def _populate_objects(self):
         with QtCore.QSignalBlocker(self.object_combo):
             self.object_combo.clear()
-            self.object_combo.addItems(self.named_targets.name.tolist())
+            self.object_combo.addItems([target.name for target in self.named_references])
             self.object_combo.setCurrentIndex(-1)
 
     def select_row(self, row):
@@ -529,7 +573,13 @@ class Viewer(W.QMainWindow):
         return None
 
     def select_named_target(self, index):
-        if not 0 <= index < self.named_targets.n:
+        if not 0 <= index < len(self.named_references):
+            return
+        if index==33:
+            settings=replace(self.presentation.solar or SolarSettings(),enabled=True,track_center=True)
+            self.presentation=replace(self.presentation,selected_row=None,reference_target=solar_reference(settings),solar=settings)
+            self._track_solar()
+            self._schedule()
             return
         target = self.named_references[index]
         # An exact original demo row can use its existing selection highlight.
@@ -543,6 +593,63 @@ class Viewer(W.QMainWindow):
         self.presentation = replace(self.presentation, selected_row=None, reference_target=target)
         self._schedule()
 
+    def _track_solar(self):
+        settings=self.presentation.solar
+        target=self.presentation.reference_target
+        if settings is not None and settings.track_center and target is not None and target.object_kind=='solar_disk':
+            geometry=solar_geometry(settings,self.view_state)
+            ra,dec=unit_to_radec(geometry['cap_center'])
+            self.view_state=replace(self.view_state,camera_locked=False,camera=CameraPose.from_radec(ra,dec))
+
+    def update_solar(self,**changes):
+        settings=replace(self.presentation.solar or SolarSettings(),**changes)
+        target=self.presentation.reference_target
+        if target is not None and target.object_kind=='solar_disk':
+            target=solar_reference(settings)
+        self.presentation=replace(self.presentation,solar=settings,reference_target=target)
+        self._track_solar()
+        self._schedule()
+
+    def apply_solar_direction(self):
+        self.update_solar(ra_deg=self.solar_ra_spin.value(),dec_deg=self.solar_dec_spin.value())
+
+    def frame_solar_disk(self):
+        settings=replace(self.presentation.solar or SolarSettings(),enabled=True)
+        self.presentation=replace(self.presentation,solar=settings,reference_target=solar_reference(settings),selected_row=None)
+        geometry=solar_geometry(settings,self.view_state)
+        ra,dec=unit_to_radec(geometry['cap_center'])
+        self.view_state=replace(self.view_state,camera_locked=False,camera=CameraPose.from_radec(ra,dec))
+        field=float(np.clip(3*math.degrees(2*geometry['radius_rad']),MIN_FOV,160.))
+        self.change(hfov_deg=field,vfov_deg=field)
+
+    def solar_heading(self,mode):
+        settings=self.presentation.solar or SolarSettings()
+        vector={'toward':settings.direction,'away':-settings.direction,
+                'transverse':np.asarray(CameraPose.from_radec(settings.ra_deg,settings.dec_deg).east)}[mode]
+        ra,dec=unit_to_radec(vector)
+        self.view_state=self.view_state.with_lock(False).with_heading(ra,dec)
+        self.update_solar(enabled=True,track_center=True)
+
+    def _solar_inspector(self):
+        settings=self.presentation.solar
+        geometry=solar_geometry(settings,self.view_state)
+        ra,dec=unit_to_radec(geometry['central_ray'])
+        cra,cdec=unit_to_radec(geometry['cap_center'])
+        self.object_name.setText('Sol · our Sun')
+        radius=math.degrees(geometry['radius_rad'])
+        limit='<p>The disk covers at least half the sky; its complete limb cannot fit this front-hemisphere projection.</p>' if radius>=90 else ''
+        self.object_details.setHtml(f'''<p style="color:#78d6eb">FINITE SOLAR DISK · FIXED 1 AU MODEL</p>
+<p>Observer distance: 1 AU ({AU_M:,.0f} m)<br>IAU nominal radius: {SOLAR_RADIUS_M/1000:,.0f} km</p>
+<p><b>Rest angular diameter</b><br>{math.degrees(2*REST_RADIUS_RAD):.7f}°</p>
+<p><b>Apparent limb-cone half-angle</b><br>{radius:.7g}°<br>Through-disk diameter: {2*radius:.7g}°</p>
+<p><b>Solid angle</b><br>{geometry['solid_angle_sr']:.7g} sr<br>{geometry['solid_angle_sr']/(4*math.pi)*100:.5g}% of full sky<br>Area ratio to rest: {geometry['solid_angle_ratio']:.7g}</p>
+<p><b>Central-ray Doppler factor</b><br>{geometry['central_doppler']:.8g}<br>Across disk: {geometry['doppler_min']:.7g} – {geometry['doppler_max']:.7g}</p>
+<p>550 nm example → {550/geometry['central_doppler']:.7g} nm<br>Example wavelength, not a measured solar line.</p>
+<p><b>Rest center</b><br>RA {settings.ra_deg:.6f}° · Dec {settings.dec_deg:.6f}°</p>
+<p><b>Apparent central ray</b><br>RA {ra:.6f}° · Dec {dec:.6f}°<br><b>Apparent limb-circle center</b><br>RA {cra:.6f}° · Dec {cdec:.6f}°</p>
+{limit}<p>Neutral fill shows angular geometry. Solar colors, radiance, limb darkening, and spectra are not modeled. The point-star RGB and D³ marker controls do not resize or brighten this disk.</p>
+<p>Fixed teaching direction, not a dated ephemeris. Speed changes the instantaneous boost at the same 1 AU event; no trajectory, orbit, or changing distance is calculated.</p>''')
+
     def _update_inspector(self):
         selection = self._inspection_selection()
         if selection is None:
@@ -551,11 +658,18 @@ class Viewer(W.QMainWindow):
             return
         import html
         catalog, row, reference = selection
+        if reference and self.presentation.reference_target.object_kind=='solar_disk':
+            self._solar_inspector()
+            return
         info = inspect_object(catalog, self.view_state, row)
         self.object_name.setText(info['name'])
         optional = lambda value, unit: f'{value:.4g} {unit}' if value is not None else 'Unknown'
         visible = not reference and row in self.panels[-1]['rows']
         status = 'NAMED REFERENCE TARGET' if reference else 'IN MOVING VIEW' if visible else 'OUTSIDE CURRENT SELECTION / FOV'
+        if not reference and self.presentation.solar is not None and self.presentation.solar.enabled:
+            from .solar import occulted_by_sol
+            if occulted_by_sol(catalog.vectors[row:row+1],self.presentation.solar)[0]:
+                status='OCCULTED BY SOL'
         provenance = ('Original demo coordinates and approximate values; frame/epoch unspecified. '
                       'Navigation reference, not an identified Hipparcos measurement.') if reference else catalog.metadata.source
         self.object_details.setHtml(f'''<p style="color:#78d6eb">{status}</p>
@@ -591,6 +705,13 @@ class Viewer(W.QMainWindow):
         self._drag = None
         if event.x is None or event.y is None or math.hypot(event.x-x, event.y-y) > 5 or button != 1:
             return
+        if panel['solar'] is not None and event.xdata is not None and event.ydata is not None:
+            camera=panel['state'].camera
+            ray=np.asarray(camera.forward)-math.tan(math.radians(event.xdata))*np.asarray(camera.east)+math.tan(math.radians(event.ydata))*np.asarray(camera.north)
+            ray/=np.linalg.norm(ray)
+            if ray@panel['solar']['cap_center']>=math.cos(panel['solar']['radius_rad']):
+                self.select_named_target(33)
+                return
         scene = panel['scene']
         xy = panel['ax'].transData.transform(np.column_stack((scene.x_deg[scene.visible], scene.y_deg[scene.visible])))
         if len(xy):
@@ -602,8 +723,8 @@ class Viewer(W.QMainWindow):
     def on_scroll(self, event):
         if event.inaxes:
             factor = .9 ** event.step
-            self.change(hfov_deg=float(np.clip(self.view_state.hfov_deg*factor, 5, 160)),
-                        vfov_deg=float(np.clip(self.view_state.vfov_deg*factor, 5, 160)))
+            self.change(hfov_deg=float(np.clip(self.view_state.hfov_deg*factor, MIN_FOV, 160)),
+                        vfov_deg=float(np.clip(self.view_state.vfov_deg*factor, MIN_FOV, 160)))
 
     def turn(self, yaw, pitch):
         self.view_state = self.view_state.with_camera(self.view_state.camera.rotated(yaw, pitch))

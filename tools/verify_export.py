@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from spaceship_viewer.exporting import export_scene
 from spaceship_viewer.scene import compute_scene
+from spaceship_viewer.solar import compute_view
 from spaceship_viewer.session import load_document
 
 
@@ -24,10 +25,15 @@ def verify(path, rerender_parent=None):
     fields = ('apparent', 'doppler', 'mu', 'x_deg', 'y_deg', 'visible', 'display_magnitude', 'marker_area_pt2', 'rgb')
     with np.load(path.parent/'scene_data.npz', allow_pickle=False) as arrays:
         for prefix, panel_state in [('moving', state)] + ([('rest', replace(state, beta=0.))] if presentation.comparison else []):
-            computed = compute_scene(catalog, panel_state)
+            computed,solar,occulted = compute_view(catalog,panel_state,presentation)
             for field in fields:
                 np.testing.assert_allclose(arrays[prefix+'_'+field], getattr(computed, field), atol=2e-12, rtol=2e-12)
             np.testing.assert_array_equal(arrays[prefix+'_visible_catalog_rows'], np.flatnonzero(catalog.vmag <= state.rest_mag_limit)[computed.visible])
+            if solar is not None:
+                np.testing.assert_array_equal(arrays[prefix+'_solar_occulted'],occulted)
+                for field in ('rest_center','rest_limb','limb','limb_doppler','cap_center','central_ray',
+                              'rest_radius_rad','radius_rad','solid_angle_sr','central_doppler','doppler_min','doppler_max'):
+                    np.testing.assert_allclose(arrays[prefix+'_solar_'+field],solar[field],atol=2e-12,rtol=2e-12)
     result = {'status': 'passed', 'scene': str(path), 'catalog_sha256': document['catalog_sha256'],
               'scope': 'artifact hashes and scientific arrays; calibrated radiometry is not validated'}
     if rerender_parent:

@@ -50,6 +50,6 @@ class NavigationTests(unittest.TestCase):
         for vertical in (1., 5., 45., 90., 160.):
             h, v = widescreen_fov(vertical)
             self.assertAlmostEqual(h/v, 16/9)
-            self.assertTrue(5 <= v <= 90 and h <= 160)
+            self.assertTrue(.001 <= v <= 90 and h <= 160)
         with self.assertRaises(ValueError):
             widescreen_fov(float('nan'))

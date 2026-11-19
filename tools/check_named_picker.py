@@ -44,7 +44,7 @@ def main():
         before=viewer.last_scene.doppler.copy()
         viewer.object_combo.activated.emit(16)
         settle()
-        assert viewer.object_combo.count()==33 and viewer.object_name.text()=='Pollux'
+        assert viewer.object_combo.count()==34 and viewer.object_name.text()=='Pollux'
         assert viewer.catalog.n==catalog.n and viewer.presentation.reference_target.name=='Pollux'
         np.testing.assert_array_equal(before,viewer.last_scene.doppler)
         viewer.grab().save(str(args.output_dir/'hipparcos_named_targets.png'))

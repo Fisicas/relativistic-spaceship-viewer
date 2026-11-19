@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import math
 from .targets import ReferenceTarget
+from .solar import SolarSettings,solar_reference
 
 
 @dataclass(frozen=True)
@@ -12,8 +13,14 @@ class Presentation:
     marker_scale: float = .85
     selected_row: int | None = None
     reference_target: ReferenceTarget | None = None
+    solar: SolarSettings | None = None
 
     def __post_init__(self):
+        if self.solar is not None and not isinstance(self.solar,SolarSettings):
+            raise ValueError('Invalid solar settings.')
+        if isinstance(self.reference_target,ReferenceTarget) and self.reference_target.object_kind=='solar_disk':
+            if self.solar is None or self.reference_target != solar_reference(self.solar):
+                raise ValueError('Solar reference must match its saved model geometry.')
         if self.reference_target is not None:
             if not isinstance(self.reference_target, ReferenceTarget) or self.selected_row is not None:
                 raise ValueError('Select either a named reference or a loaded catalog row.')

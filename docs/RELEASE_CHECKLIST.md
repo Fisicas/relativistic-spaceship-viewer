@@ -31,7 +31,7 @@ version string does not mean that a Git tag or public release exists.
 
 1. Review the complete local diff, scientific limitations, license notices,
    unsigned-binary status, clean-machine results, and release notes.
-2. Commit the reviewed source locally. Create a local `v0.2.2` tag only after
+2. Commit the reviewed source locally. Create a local `v0.2.3` tag only after
    resolving the final source/release provenance.
 3. With separate user authorization, push the branch/tag and allow CI to run.
 4. Upload the exact named Windows ZIP/setup plus wheel/source/hashes to the

@@ -132,9 +132,9 @@ def main():
             metadata=CatalogMetadata(source='Synthetic Hipparcos-like background; not observational data'))
         viewer.apply_catalog(background,'Synthetic catalog fixture')
         settle()
-        expected = built_in_catalog().name.tolist()
-        check(viewer.object_combo.count()==33 and [viewer.object_combo.itemText(i) for i in range(33)]==expected,
-              'loaded catalog retains the original 33 named targets in original order')
+        expected = built_in_catalog().name.tolist()+['Sol']
+        check(viewer.object_combo.count()==34 and [viewer.object_combo.itemText(i) for i in range(34)]==expected,
+              'loaded catalog retains the original 33 named targets plus Sol')
         row=expected.index('Pollux')
         heading=viewer.view_state.velocity_direction.copy()
         viewer.object_combo.activated.emit(row)
@@ -156,7 +156,7 @@ def main():
         viewer.select_row(0)
         settle()
         check(viewer.object_name.text()=='HIP fixture' and viewer.presentation.reference_target is None
-              and viewer.object_combo.currentIndex()==-1 and viewer.object_combo.count()==33,
+              and viewer.object_combo.currentIndex()==-1 and viewer.object_combo.count()==34,
               'clicked catalog object remains inspectable without enlarging named picker')
         viewer.restore_demo()
         viewer.reset()
@@ -236,6 +236,43 @@ def main():
         check(not viewer.controls_scroll.isHidden(), 'focus mode restores controls')
         check(viewer.view_state.hfov_deg == 45. and viewer.view_state.vfov_deg == 45.,
               'leaving focus restores previous field of view')
+        viewer.select_named_target(33)
+        settle()
+        check(viewer.presentation.solar is not None and viewer.object_name.text()=='Sol · our Sun',
+              'Sol is available as a finite disk inspector entry')
+        from spaceship_viewer.solar import solar_geometry,REST_RADIUS_RAD
+        viewer.set_beta(.9)
+        viewer.solar_heading('toward')
+        settle()
+        toward=solar_geometry(viewer.presentation.solar,viewer.view_state)['radius_rad']
+        heading=viewer.view_state.velocity_direction.copy()
+        viewer.frame_solar_disk()
+        settle()
+        check(np.array_equal(heading,viewer.view_state.velocity_direction) and not viewer.view_state.camera_locked,
+              'framing solar disk preserves velocity and unlocks camera')
+        field=viewer.view_state.hfov_deg
+        viewer.solar_heading('away')
+        settle()
+        away=solar_geometry(viewer.presentation.solar,viewer.view_state)['radius_rad']
+        check(toward<REST_RADIUS_RAD<away,'toward shrinks and away enlarges the solar disk')
+        check(viewer.view_state.hfov_deg==field,'solar tracking does not autozoom away angular-size changes')
+        g=solar_geometry(viewer.presentation.solar,viewer.view_state)
+        check(np.allclose(viewer.view_state.camera.forward,g['cap_center']), 'solar tracking follows apparent disk without steering')
+        viewer.solar_ra_spin.setValue(90.)
+        viewer.solar_dec_spin.setValue(10.)
+        viewer.apply_solar_direction()
+        settle()
+        check(viewer.presentation.solar.ra_deg==90. and viewer.presentation.reference_target.ra_deg==90.,
+              'solar teaching direction is editable and saved with target')
+        viewer.set_beta(.999999)
+        viewer.solar_heading('toward')
+        viewer.frame_solar_disk()
+        settle()
+        check(viewer.view_state.vfov_deg<.01,'solar framing supports sub-degree high-speed disks')
+        viewer.solar_heading('away')
+        viewer.frame_solar_disk()
+        settle()
+        check('half the sky' in viewer.object_details.toPlainText(), 'large solar cap is rendered and clearly labeled')
         result = {'status': 'passed', 'checks': checks, 'logical_layouts': layouts,
                   'live_vizier_request': False, 'mode': 'Qt offscreen integration test'}
         with args.output.open('x', encoding='utf-8') as stream:

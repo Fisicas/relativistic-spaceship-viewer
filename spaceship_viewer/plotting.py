@@ -7,10 +7,12 @@ from dataclasses import replace
 import numpy as np
 from matplotlib.transforms import Bbox
 from matplotlib.font_manager import FontProperties
+from matplotlib.patches import Polygon
 from .scene import compute_scene
 from .relativity import lorentz_factor
 from .relativity import aberrate
 from .geometry import project_directions
+from .solar import compute_view
 
 BACKGROUND = '#080e19'
 FOREGROUND = '#d7e3f1'
@@ -18,7 +20,39 @@ MUTED = '#7e93ad'
 ACCENT = '#6dd8ed'
 
 
-def draw_view(ax, scene, state, presentation, original_rows, selected=None):
+def draw_solar_disk(ax,state,geometry,labels):
+    """Neutral silhouette: exact sampled limb, implicit-cap fallback at horizon.
+
+    The fallback samples the displayed angular map on a 401×401 grid when the
+    boundary crosses the camera horizon or the disk exceeds a hemisphere.
+    """
+    limb=geometry['limb']
+    x,y,_=project_directions(limb,state.camera,state.hfov_deg,state.vfov_deg)
+    if np.all(limb@state.camera.forward>0) and geometry['radius_rad']<np.pi/2:
+        ax.add_patch(Polygon(np.column_stack((x,y)),closed=True,facecolor='#fff1c9',
+                             edgecolor='#f4bd60',linewidth=.9,zorder=4))
+    else:
+        gx=np.linspace(-state.hfov_deg/2,state.hfov_deg/2,401)
+        gy=np.linspace(-state.vfov_deg/2,state.vfov_deg/2,401)
+        xx,yy=np.meshgrid(np.tan(np.deg2rad(gx)),np.tan(np.deg2rad(gy)))
+        center=geometry['cap_center']
+        score=(center@state.camera.forward-xx*(center@state.camera.east)+yy*(center@state.camera.north))/np.sqrt(1+xx*xx+yy*yy)
+        inside=score>=np.cos(geometry['radius_rad'])
+        if inside.all():
+            ax.axhspan(-state.vfov_deg/2,state.vfov_deg/2,color='#fff1c9',zorder=4)
+        elif inside.any():
+            ax.contourf(gx,gy,inside.astype(float),levels=[.5,1.5],colors=['#fff1c9'],zorder=4)
+            ax.contour(gx,gy,score,levels=[np.cos(geometry['radius_rad'])],colors=['#f4bd60'],linewidths=.9,zorder=4)
+    cx,cy,visible=project_directions(geometry['central_ray'][None,:],state.camera,state.hfov_deg,state.vfov_deg)
+    if visible[0]:
+        ax.plot(cx,cy,marker='+',markersize=8,color='#bf8733',linestyle='none',zorder=6)
+        if labels:
+            ax.annotate('Sol · 1 AU model',(cx[0],cy[0]),xytext=(10,10),textcoords='offset points',
+                        color=ACCENT,fontsize=8,zorder=6,annotation_clip=True,
+                        bbox={'facecolor':BACKGROUND,'edgecolor':'none','alpha':.85,'pad':2})
+
+
+def draw_view(ax, scene, state, presentation, original_rows, selected=None, solar=None):
     ax.set_facecolor(BACKGROUND)
     for spine in ax.spines.values():
         spine.set_color('#243247')
@@ -39,7 +73,9 @@ def draw_view(ax, scene, state, presentation, original_rows, selected=None):
         ax.scatter(x, y, s=np.clip(areas * 4.5, 2, 900), c=scene.rgb, alpha=.08, linewidths=0, zorder=2)
         ax.scatter(x, y, s=np.clip(areas * 2., 1, 500), c=scene.rgb, alpha=.13, linewidths=0, zorder=2)
     points = ax.scatter(x, y, s=areas, c=scene.rgb, alpha=.97, linewidths=0, zorder=3)
-    if presentation.reference_target is not None:
+    if solar is not None:
+        draw_solar_disk(ax,state,solar,state.labels)
+    if presentation.reference_target is not None and presentation.reference_target.object_kind!='solar_disk':
         target = presentation.reference_target
         apparent, _, _ = aberrate(target.as_catalog().vectors, state.velocity_direction, state.beta)
         tx, ty, inside = project_directions(apparent, state.camera, state.hfov_deg, state.vfov_deg)
@@ -53,7 +89,7 @@ def draw_view(ax, scene, state, presentation, original_rows, selected=None):
     if len(hit):
         i = hit[0]
         ax.scatter([x[i]], [y[i]], s=max(areas[i] * 1.8, 100), facecolors='none', edgecolors=ACCENT, lw=1., zorder=4)
-    if not len(x):
+    if not len(x) and solar is None:
         ax.text(.5, .5, 'No catalog objects in this view', transform=ax.transAxes,
                 ha='center', va='center', color=MUTED, fontsize=10)
     return points
@@ -127,15 +163,18 @@ def draw_figure(figure, catalog, state, presentation, title, *, for_export=False
     panels = []
     for i, ax in enumerate(axes):
         panel_state = replace(state, beta=0.) if count == 2 and i == 0 else state
-        scene = compute_scene(catalog, panel_state)
+        scene, solar, occulted = compute_view(catalog,panel_state,presentation)
         rows = np.flatnonzero(catalog.vmag <= state.rest_mag_limit)[scene.visible]
-        draw_view(ax, scene, panel_state, presentation, rows, presentation.selected_row)
+        draw_view(ax, scene, panel_state, presentation, rows, presentation.selected_row,solar)
         moving = not (count == 2 and i == 0)
         heading = 'MOVING OBSERVER' if moving else 'REST FRAME'
         dop = scene.doppler[scene.visible]
-        subtitle = f'β {panel_state.beta:.6g}   ·   γ {lorentz_factor(panel_state.beta):.5g}   ·   {scene.n_visible} objects'
+        subtitle = f'β {panel_state.beta:.6g}   ·   γ {lorentz_factor(panel_state.beta):.5g}   ·   {scene.n_visible} catalog objects'
+        if solar is not None:
+            subtitle += ' · Sol model'
         ax.set_title(heading + '\n' + subtitle, loc='left', color=FOREGROUND, fontsize=9, pad=13, linespacing=1.8)
-        panels.append({'ax': ax, 'scene': scene, 'state': panel_state, 'rows': rows})
+        panels.append({'ax': ax, 'scene': scene, 'state': panel_state, 'rows': rows,
+                       'solar':solar,'solar_occulted':occulted})
     if for_export:
         figure.text(.065, .947, 'RELATIVISTIC SPACESHIP VIEWER', color=ACCENT, fontsize=10, weight='bold')
         figure.text(.065, .900, title, color=FOREGROUND, fontsize=16, weight='bold')

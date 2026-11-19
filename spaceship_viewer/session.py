@@ -16,6 +16,7 @@ from .geometry import CameraPose
 from .presentation import Presentation
 from .state import ViewState
 from .targets import ReferenceTarget
+from .solar import SolarSettings
 
 SCHEMA = 'relativistic-spaceship-viewer.scene/1'
 NUMERIC_COLUMNS = ('ra_deg', 'dec_deg', 'vmag', 'bv', 'distance_pc')
@@ -63,6 +64,8 @@ def decode_document(document):
     view['camera'] = CameraPose(**view['camera'])
     state = ViewState(**view)
     appearance = dict(document['presentation'])
+    if appearance.get('solar') is not None:
+        appearance['solar'] = SolarSettings(**appearance['solar'])
     if appearance.get('reference_target') is not None:
         appearance['reference_target'] = ReferenceTarget.from_dict(appearance['reference_target'])
     presentation = Presentation(**appearance)

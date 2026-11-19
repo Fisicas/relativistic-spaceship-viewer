@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.3 — unpublished fixed-1-AU Sol model, 2026-11-19
+
+- Add Sol after the original 33 targets, with editable teaching direction,
+  finite solar silhouette, angular-size/solid-angle/Doppler readouts, independent
+  camera tracking, framing, and explicit toward/away/transverse headings.
+- Model the aberrated spherical cap and distant-background ray occultation;
+  preserve model constants, geometry, limb rays, and masks in scenes/exports.
+- Extend zoom to 0.001°; keep point-star marker proxies separate from solar
+  geometry. Add analytic, quadrature, GUI, replay, and frozen-rendering checks.
+
 ## 0.2.2 — unpublished named-target picker fix, 2026-11-19
 
 - Keep the original 33 named targets in the inspector dropdown when Hipparcos

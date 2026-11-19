@@ -1,5 +1,15 @@
 # Scientific exports and portable scenes
 
+Optional Sol scenes preserve a fixed 1 AU model, nominal radius in meters,
+editable direction, visibility/tracking flags, and separate target data. Per
+panel, NPZ includes solar rest/apparent limb rays, central ray, cap center,
+angular radius in radians, solid angle in steradians, Doppler values, and a
+candidate-aligned occultation mask. Stellar visible arrays reflect that mask;
+original catalog data and pre-visibility directions/Doppler arrays are retained.
+The verifier replays the solar-aware view. [Solar model](SOLAR_MODEL.md) describes
+the 720 limb samples and 401×401 display-mask fallback; no stellar resampling
+or calibrated solar radiometry is performed.
+
 Version 0.2.2 embeds a selected named reference separately from the sky catalog,
 including its full values and provenance. Reference crosses are annotations and
 are excluded from the measured-source counts and NPZ catalog arrays. Older

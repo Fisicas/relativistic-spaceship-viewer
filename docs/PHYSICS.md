@@ -1,5 +1,12 @@
 # Physical conventions and numerical scope
 
+The optional [Sol model](SOLAR_MODEL.md) adds a static finite photosphere one AU
+from this same observer event. Its editable direction is a teaching reference,
+not a dated ephemeris. Solar limb directions use the same Lorentz boost; an
+analytic spherical-cap calculation supplies angular radius/solid angle, and
+rest-cone membership supplies distant-background occultation. The stellar
+Lorentz transform and input catalog values are unchanged.
+
 This development version models one instantaneous special-relativistic observer
 at the catalog origin. Numerical verification of the directional transform does
 not validate the stellar catalog, photometry, RGB appearance, or a finite voyage.

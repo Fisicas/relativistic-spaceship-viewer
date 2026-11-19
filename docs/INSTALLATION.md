@@ -2,7 +2,7 @@
 
 ## Local prepared release
 
-Run the prepared `relativistic-spaceship-viewer-0.2.2-windows-x64-setup.exe`.
+Run the prepared `relativistic-spaceship-viewer-0.2.3-windows-x64-setup.exe`.
 It installs for the current Windows user; administrator rights, Python, and Git
 are not required. The default location is:
 

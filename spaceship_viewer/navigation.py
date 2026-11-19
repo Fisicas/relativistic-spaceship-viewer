@@ -5,6 +5,7 @@ from .geometry import CameraPose, finite_scalar, unit_to_radec
 from .relativity import aberrate
 
 WIDESCREEN_RATIO = 16. / 9.
+MIN_FOV = .001
 
 
 def center_object(catalog, state, row):
@@ -27,5 +28,5 @@ def widescreen_fov(vertical_deg):
     This is not a gnomonic pinhole projection, so the ratio is H/V, not the
     ratio of tangent half-angles. Limit H to the UI's 160-degree maximum.
     """
-    vertical = float(np.clip(finite_scalar(vertical_deg, 'vertical FOV'), 5., 160./WIDESCREEN_RATIO))
+    vertical = float(np.clip(finite_scalar(vertical_deg, 'vertical FOV'), MIN_FOV, 160./WIDESCREEN_RATIO))
     return vertical * WIDESCREEN_RATIO, vertical
