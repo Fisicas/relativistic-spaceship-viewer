@@ -1,0 +1,180 @@
+"""Offscreen Qt integration checks; controlled dialogs and no live VizieR call."""
+from pathlib import Path
+import argparse
+from dataclasses import replace
+import json
+import math
+import os
+import sys
+import tempfile
+import time
+from types import SimpleNamespace
+from unittest.mock import patch
+os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+import numpy as np
+from PySide6 import QtWidgets as W, QtGui
+from spaceship_viewer import qt_app as module
+from spaceship_viewer.demo_catalog import built_in_catalog
+from spaceship_viewer.session import load_document, save_document
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', required=True, type=Path)
+    args = parser.parse_args()
+    assert not args.output.exists()
+    app = W.QApplication.instance() or W.QApplication([])
+    app.setStyle('Fusion')
+    for name in ('segoeui.ttf', 'segoeuib.ttf', 'seguisb.ttf'):
+        font = Path(os.environ.get('WINDIR', r'C:\Windows')) / 'Fonts' / name
+        if font.exists():
+            QtGui.QFontDatabase.addApplicationFont(str(font))
+    from matplotlib.font_manager import findfont
+    QtGui.QFontDatabase.addApplicationFont(findfont('DejaVu Sans'))
+    viewer = module.Viewer()
+    checks = []
+
+    def check(value, name):
+        assert value, name
+        checks.append(name)
+
+    def settle():
+        viewer.render_timer.stop()
+        viewer.refresh()
+        app.processEvents()
+
+    try:
+        viewer.resize(1450, 900)
+        viewer.show()
+        app.processEvents()
+        settle()
+        check(viewer.last_scene.n_visible == 12, 'initial Orion scene')
+        viewer.set_gamma(2.)
+        settle()
+        check(abs(viewer.view_state.beta - math.sqrt(3)/2) < 1e-15, 'exact gamma=2 speed retained')
+        check(viewer.last_scene.n_visible == 26, 'gamma=2 reference visibility')
+        viewer.set_lock(False)
+        heading = viewer.view_state.velocity_direction.copy()
+        d = viewer.last_scene.doppler.copy()
+        viewer.turn(12., 5.)
+        settle()
+        check(np.array_equal(heading, viewer.view_state.velocity_direction), 'unlocked camera does not steer velocity')
+        check(np.array_equal(d, viewer.last_scene.doppler), 'camera rotation does not change Doppler factors')
+        viewer.set_lock(True)
+        settle()
+        check(np.allclose(viewer.view_state.camera.forward, heading), 'relock points camera along velocity')
+        viewer.toggle_comparison(True)
+        settle()
+        check(len(viewer.panels) == 2 and viewer.panels[0]['state'].beta == 0., 'rest/moving comparison')
+        check(viewer.panels[0]['state'].camera == viewer.panels[1]['state'].camera, 'comparison camera synchronized')
+        viewer.select_row(0)
+        settle()
+        check(viewer.object_name.text() == 'Betelgeuse', 'object inspector selects by catalog row')
+        check('550' in viewer.object_details.toPlainText(), 'wavelength example is labeled')
+        viewer.change(rest_mag_limit=-5.)
+        settle()
+        check(viewer.last_scene.n_visible == 0, 'empty scene renders')
+        viewer.reset()
+        settle()
+        temp_root = ROOT / '.test-tmp'
+        temp_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_root) as directory:
+            assert Path(directory).resolve().is_relative_to(temp_root.resolve())
+            csv = Path(directory) / 'synthetic.csv'
+            csv.write_text('name,ra,dec,mag,bv\nSynthetic,1,0,1,\nBad,2,100,2,.3\n', encoding='utf-8')
+            old = viewer.catalog
+            with patch.object(module.W.QFileDialog, 'getOpenFileName', return_value=(str(csv), '')), \
+                 patch.object(module.W.QInputDialog, 'getItem', return_value=('hour', True)), \
+                 patch.object(module.W.QMessageBox, 'question', return_value=module.W.QMessageBox.StandardButton.No):
+                viewer.import_csv()
+            check(viewer.catalog is old, 'canceling CSV preview preserves catalog')
+            with patch.object(module.W.QFileDialog, 'getOpenFileName', return_value=(str(csv), '')), \
+                 patch.object(module.W.QInputDialog, 'getItem', return_value=('hour', True)), \
+                 patch.object(module.W.QMessageBox, 'question', return_value=module.W.QMessageBox.StandardButton.Yes):
+                viewer.import_csv()
+            check(viewer.catalog.n == 1 and viewer.catalog.ra_deg[0] == 15., 'CSV declared units and row rejection reach GUI')
+            saved = Path(directory) / 'saved.json'
+            with patch.object(module.W.QFileDialog, 'getSaveFileName', return_value=(str(saved), '')):
+                viewer.save_scene()
+            viewer.restore_demo()
+            with patch.object(module.W.QFileDialog, 'getOpenFileName', return_value=(str(saved), '')):
+                viewer.open_scene()
+            check(viewer.catalog.n == 1 and viewer.catalog.name[0] == 'Synthetic', 'saved scene reopens with embedded catalog')
+        viewer.restore_demo()
+        settle()
+        with patch.object(module, 'fetch_hipparcos', side_effect=RuntimeError('controlled offline failure')), \
+             patch.object(viewer, 'error') as error:
+            old = viewer.catalog
+            viewer.start_fetch()
+            deadline = time.monotonic()+3
+            while viewer._fetching and time.monotonic() < deadline:
+                viewer.poll_fetch()
+                app.processEvents()
+                time.sleep(.01)
+            check(not viewer._fetching and error.call_count == 1, 'fetch errors reach GUI thread')
+            check(viewer.catalog is old, 'fetch failure retains catalog')
+        with patch.object(module, 'fetch_hipparcos', return_value=built_in_catalog()):
+            viewer.start_fetch()
+            deadline = time.monotonic()+3
+            while viewer._fetching and time.monotonic() < deadline:
+                viewer.poll_fetch()
+                app.processEvents()
+                time.sleep(.01)
+            check(not viewer._fetching and viewer.catalog.n == 33, 'controlled fetch result applied')
+        settle()
+        previous_revision = viewer._catalog_revision
+        viewer.restore_demo()
+        newer = viewer.catalog
+        viewer._messages.put((True, built_in_catalog(), 8., previous_revision))
+        viewer.poll_fetch()
+        check(viewer.catalog is newer, 'stale fetch cannot replace a newer catalog')
+        from spaceship_viewer import deployment
+        with patch.object(deployment,'latest_release',return_value=None):
+            viewer.check_updates(automatic=True)
+            deadline=time.monotonic()+3
+            while viewer._checking_update and time.monotonic()<deadline:
+                viewer.poll_updates()
+                app.processEvents()
+                time.sleep(.01)
+            check(not viewer._checking_update,'offline/no-new-release check leaves viewer usable')
+        release={'version':'0.2.1','notes':'Controlled fixture; not a published release'}
+        viewer._update_messages.put(('check',release,None,True))
+        viewer.poll_updates()
+        check(not viewer.update_notice.isHidden(),'new release is offered without a startup modal')
+        with patch.object(viewer,'error') as error:
+            previous=viewer.catalog
+            viewer._downloading_update=True
+            viewer._update_messages.put(('download',None,'controlled digest failure',False))
+            viewer.poll_updates()
+            check(error.call_count==1 and viewer.catalog is previous and not viewer._downloading_update,
+                  'failed update preserves catalog and resets update state')
+        # Same Qt widget hierarchy at common laptop/desktop logical sizes.
+        layouts = []
+        for width, height in ((1060, 700), (1450, 900), (1920, 1080)):
+            viewer.inspector.setVisible(width >= 1400)
+            viewer.resize(width, height)
+            app.processEvents()
+            settle()
+            layouts.append({'requested': [width, height], 'actual': [viewer.width(), viewer.height()],
+                            'canvas': [viewer.canvas.width(), viewer.canvas.height()]})
+            check(viewer.canvas.width() >= 320 and viewer.canvas.height() >= 330, f'viewport remains usable at {width}x{height}')
+        viewer.focus_sky(True)
+        settle()
+        check(viewer.controls_scroll.isHidden() and viewer.inspector.isHidden(), 'focus mode expands viewport')
+        viewer.focus_sky(False)
+        settle()
+        check(not viewer.controls_scroll.isHidden(), 'focus mode restores controls')
+        result = {'status': 'passed', 'checks': checks, 'logical_layouts': layouts,
+                  'live_vizier_request': False, 'mode': 'Qt offscreen integration test'}
+        with args.output.open('x', encoding='utf-8') as stream:
+            json.dump(result, stream, indent=2)
+        print(json.dumps(result, indent=2))
+    finally:
+        viewer.close()
+        app.processEvents()
+
+
+if __name__ == '__main__':
+    main()

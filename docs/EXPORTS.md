@@ -1,0 +1,57 @@
+# Scientific exports and portable scenes
+
+The Export dialog creates a new `name_v01`, `name_v02`, etc. folder under the
+chosen parent. Existing exports are never overwritten. Choose 4K landscape
+(3840 x 2160), Full HD (1920 x 1080), or square (2400 x 2400). The Python API can
+also request other sizes within the documented 7680-pixel limits.
+
+| File | Contents |
+|---|---|
+| `scene.png` | Exact requested pixel dimensions; no tight cropping |
+| `scene.svg` | Vector figures with editable text; local font substitution may alter appearance |
+| `scene.pdf` | Vector figure with embedded TrueType fonts |
+| `scene.json` | Full portable catalog, camera triad, view/presentation settings, and provenance |
+| `scene_data.npz` | Candidate directions, D, mu, projection, visibility, display proxy, core marker areas, RGB, and visible original row IDs |
+
+All figures state heading, camera, FOV, speed, selection, and display
+approximations. Source/catalog order is preserved. There is no numerical
+smoothing, interpolation, resampling, or uncertainty propagation. Raster
+antialiasing and glow are presentation effects.
+
+JSON encodes unknown B−V and distance values as `null`; reopening restores NaN.
+The catalog checksum identifies the embedded columns, metadata, and import
+report. A source CSV hash, when available, is distinct from this snapshot hash.
+The saved camera includes all three basis vectors, preserving roll. The default
+app version, runtime/library versions, source-file hashes, figure dimensions,
+font, label policy, actual drawn label counts, and artifact hashes are recorded.
+The source path is provenance only; loading never reads it or contacts a server.
+
+`scene_data.npz` is loaded with `allow_pickle=False`. Candidate-sized arrays
+refer to objects retained by the rest V cut; `visible` indexes those candidates.
+Display-magnitude/core-marker-area/RGB arrays are visible-object-sized. Visible
+catalog row IDs refer to the original embedded catalog, including duplicate
+names. The presentation marker scale is stored separately and applied after
+the core marker-area calculation. Prefixes are `moving_` and, in comparison
+mode, `rest_`.
+
+Reopen an exported `scene.json` with **Open scene**. For a reproducibility check
+from the checkout root:
+
+```powershell
+$sciencePython = 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe'
+& $sciencePython -X utf8 .\tools\verify_export.py 'C:\path\to\scene.json' `
+    --rerender-parent 'C:\path\to\new_reproduction_folder'
+```
+
+The verifier checks artifact hashes and recomputes arrays within 2e-12
+absolute/relative tolerance. Optional re-rendering compares PNG pixels in the
+current environment and writes a new versioned result. A pixel mismatch is
+reported instead of silently claiming identical output. Different library/font
+versions can alter pixels or label placement while the numerical model agrees.
+SVG/PDF file hashes may change with document timestamps; file-byte identity is
+not the scientific reproducibility criterion.
+
+Exporting is a local operation. It does not publish, upload, or validate the
+catalog's measurements or calibrated photometry. If an export fails, an
+`INCOMPLETE.txt` marker remains in its new directory; the next attempt gets a
+new version rather than overwriting that result.

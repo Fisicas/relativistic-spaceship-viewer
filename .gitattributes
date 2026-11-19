@@ -1,0 +1,7 @@
+# Source fingerprints and generated artifact manifests refer to exact bytes.
+# Preserve those bytes across Windows and Unix checkouts.
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Matplotlib emits trailing path-coordinate separators in generated SVGs.
+# Preserve its output rather than editing a recorded scientific artifact.
+docs/images/**/*.svg -whitespace
