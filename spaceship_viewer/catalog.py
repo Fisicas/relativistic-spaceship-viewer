@@ -262,7 +262,7 @@ def catalog_from_hipparcos_table(tab, max_vmag):
     notes = ("Coordinates: ICRS, catalog epoch J1991.25; no proper motion propagation.",
              "Positive parallax inverted in mas to pc; no distance inference or uncertainty propagation.",
              "Unknown B-V and distance remain NaN; completeness is not certified.",
-             "Live table is not cached by this adapter; save source separately for archival reproduction.")
+             "Adapter does not archive the original VOTable; application may save a separate processed catalog snapshot.")
     report = ImportReport(len(ra), int(valid.sum()), tuple(RowIssue(int(i) + 1, "invalid required coordinate or magnitude")
                           for i in np.flatnonzero(~valid)), notes)
     if not valid.any():
@@ -270,7 +270,8 @@ def catalog_from_hipparcos_table(tab, max_vmag):
     metadata = CatalogMetadata(source="VizieR I/239/hip_main (ESA 1997)",
                                coordinate_frame="ICRS", coordinate_epoch="J1991.25 (TT)",
                                magnitude_system="Johnson V", retrieved_utc=datetime.now(timezone.utc).isoformat(),
-                               selection=f"Vmag < {max_vmag}; server query limit, not apparent detection threshold",
+                               selection=(f"Vmag < {max_vmag}; server query limit, not apparent detection threshold" if max_vmag is not None else
+                                          "All Hipparcos main-table rows requested; no server magnitude cut; rest V display cut is local"),
                                notes=notes)
     return StarCatalog(names[valid], ra[valid], dec[valid], mag[valid], bv[valid], dist[valid],
                        metadata=metadata, import_report=report)

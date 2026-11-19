@@ -13,7 +13,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 import numpy as np
 from . import __version__
-from .plotting import draw_figure
+from .plotting import draw_figure, BACKGROUND
 from .session import make_document
 from .solar_radiometry import solar_image, summary as solar_summary
 
@@ -49,7 +49,7 @@ def export_scene(parent, stem, catalog, state, presentation, title, *, width=384
     (folder / 'INCOMPLETE.txt').write_text('Export in progress.\n', encoding='utf-8')
     with matplotlib.rc_context({'font.family': 'DejaVu Sans', 'svg.fonttype': 'none', 'pdf.fonttype': 42,
                                 'path.simplify': False, 'svg.hashsalt': 'relativistic-spaceship-viewer-v2'}):
-        fig = Figure(figsize=(width / dpi, height / dpi), dpi=dpi, facecolor='#080e19')
+        fig = Figure(figsize=(width / dpi, height / dpi), dpi=dpi, facecolor=BACKGROUND)
         FigureCanvasAgg(fig)
         panels = draw_figure(fig, catalog, state, presentation, title, for_export=True)
         fig.canvas.draw()
@@ -75,7 +75,7 @@ def export_scene(parent, stem, catalog, state, presentation, title, *, width=384
                             numerical[prefix+'_solar_image_'+field]=image[field]
         np.savez_compressed(folder / 'scene_data.npz', **numerical)
     fingerprints = {}
-    for name in ('__init__.py', 'catalog.py', 'geometry.py', 'relativity.py', 'state.py', 'scene.py', 'solar.py', 'solar_radiometry.py', 'data/CIE_xyz_1931_2deg.csv', 'display.py', 'presentation.py', 'targets.py', 'plotting.py', 'session.py', 'exporting.py'):
+    for name in ('__init__.py', 'catalog.py', 'geometry.py', 'relativity.py', 'state.py', 'scene.py', 'solar.py', 'solar_radiometry.py', 'theme.py', 'data/CIE_xyz_1931_2deg.csv', 'display.py', 'presentation.py', 'targets.py', 'plotting.py', 'session.py', 'exporting.py'):
         source = Path(__file__).parent / name
         fingerprints[name] = hashlib.sha256(source.read_bytes()).hexdigest()
     artifacts = {file.name: hashlib.sha256(file.read_bytes()).hexdigest() for file in sorted(folder.iterdir()) if file.name != 'INCOMPLETE.txt'}

@@ -96,6 +96,14 @@ def run(output):
         check(viewer.catalog.n==1 and viewer.presentation.reference_target.name=='Pollux',
               'reference target is separate from loaded measurements')
         with tempfile.TemporaryDirectory(prefix='rsv-selftest-') as directory:
+            from . import catalog_cache
+            info=catalog_cache.save_cached(fixture,root=Path(directory)/'catalog-cache')
+            cached,_=catalog_cache.load_cached(root=Path(directory)/'catalog-cache',minimum_limit=20.)
+            check(np.array_equal(cached.ra_deg,fixture.ra_deg),'offline local catalog snapshot round trip')
+            viewer.cockpit_speed_slider.setValue(5000)
+            viewer.refresh()
+            check(viewer.speed_slider.value()==5000,'wide cockpit slider synchronizes sidebar')
+            check(not viewer.windowIcon().isNull(),'selected angular window icon is bundled')
             figure=export_scene(directory,'probe',catalog,state,Presentation(), 'Offline installation check',
                                 width=960,height=720,dpi=100)
             restored,reopened,_,_=load_document(figure/'scene.json')

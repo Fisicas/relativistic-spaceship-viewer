@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+<title>Relativistic Spaceship Viewer</title>
+<desc>Actual gamma=2 inherited demo sky, rectangular angular map. Point colors and brightness are illustrative.</desc>
+<rect width="1280" height="640" fill="#191919"/>
+<g font-family="Segoe UI,Arial,sans-serif" fill="#eeeeee">
+<text x="64" y="84" font-size="46" font-weight="600">RELATIVISTIC</text>
+<text x="64" y="143" font-size="46" font-weight="600">SPACESHIP VIEWER</text>
+<text x="66" y="188" font-size="21" fill="#b4b4b4">An instantaneous sky, transformed.</text>
+</g>
+<g transform="translate(1100 45) scale(.116)">
+  <title>Relativistic Spaceship Viewer — aberration window mark</title>
+  <desc>Angular open aperture, an amber light wedge, and two compressed cyan marks. No target or crosshair motif. Flat vector redraw of the selected logo concept.</desc>
+  <g fill="#79d8ea">
+    <path d="M80 40 920 348 920 374 180 163 180 306 80 286Z"/>
+    <path d="M80 760 920 474 920 450 180 590 180 617 80 641Z"/>
+    <path d="M708 411 798 415 784 438 691 444Z"/>
+    <path d="M842 419 902 421 892 436 832 439Z"/>
+  </g>
+  <path fill="#e6aa58" d="M80 373 675 428 80 486Z"/>
+</g>
+<rect x="62.0" y="224.0" width="1156.0" height="308.0" rx="8" fill="#121212" stroke="#555555"/>
+<path d="M64.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M208.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M352.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M496.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M640.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M784.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M928.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M1072.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M1216.0 226.0V530.0" stroke="#303030" stroke-width=".7"/>
+<path d="M64.0 522.0H1216.0" stroke="#303030" stroke-width=".7"/>
+<path d="M64.0 450.0H1216.0" stroke="#303030" stroke-width=".7"/>
+<path d="M64.0 378.0H1216.0" stroke="#303030" stroke-width=".7"/>
+<path d="M64.0 306.0H1216.0" stroke="#303030" stroke-width=".7"/>
+<path d="M64.0 234.0H1216.0" stroke="#303030" stroke-width=".7"/>
+<circle cx="621.544940" cy="345.460034" r="13.10009" fill="#bdd2ff" opacity=".10"/>
+<circle cx="621.544940" cy="345.460034" r="6.55004" fill="#bdd2ff"/>
+<text x="635.09498" y="338.46003" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Betelgeuse</text>
+<circle cx="660.591588" cy="405.902998" r="13.10009" fill="#98b9ff" opacity=".10"/>
+<circle cx="660.591588" cy="405.902998" r="6.55004" fill="#98b9ff"/>
+<text x="674.14163" y="398.90300" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Rigel</text>
+<circle cx="650.467807" cy="349.592523" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="650.467807" cy="349.592523" r="6.55004" fill="#97b9ff"/>
+<circle cx="643.852101" cy="375.295934" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="643.852101" cy="375.295934" r="6.55004" fill="#97b9ff"/>
+<text x="657.40215" y="368.29593" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Mintaka</text>
+<circle cx="639.794002" cy="378.779027" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="639.794002" cy="378.779027" r="6.55004" fill="#97b9ff"/>
+<circle cx="635.411733" cy="381.638320" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="635.411733" cy="381.638320" r="6.55004" fill="#97b9ff"/>
+<circle cx="628.749582" cy="411.539187" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="628.749582" cy="411.539187" r="6.55004" fill="#97b9ff"/>
+<circle cx="640.827080" cy="335.691367" r="10.18061" fill="#97b9ff" opacity=".10"/>
+<circle cx="640.827080" cy="335.691367" r="5.09031" fill="#97b9ff"/>
+<circle cx="640.684462" cy="394.950684" r="7.76959" fill="#99baff" opacity=".10"/>
+<circle cx="640.684462" cy="394.950684" r="3.88480" fill="#99baff"/>
+<circle cx="697.268806" cy="308.838439" r="13.10009" fill="#b9d0ff" opacity=".10"/>
+<circle cx="697.268806" cy="308.838439" r="6.55004" fill="#b9d0ff"/>
+<text x="710.81885" y="301.83844" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Aldebaran</text>
+<circle cx="648.841223" cy="261.294212" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="648.841223" cy="261.294212" r="6.55004" fill="#97b9ff"/>
+<text x="662.39127" y="254.29421" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Elnath</text>
+<circle cx="581.143673" cy="309.218171" r="13.10009" fill="#99bbff" opacity=".10"/>
+<circle cx="581.143673" cy="309.218171" r="6.55004" fill="#99bbff"/>
+<text x="594.69372" y="302.21817" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Alhena</text>
+<circle cx="574.378303" cy="440.641088" r="13.10009" fill="#99bbff" opacity=".10"/>
+<circle cx="574.378303" cy="440.641088" r="6.55004" fill="#99bbff"/>
+<text x="587.92835" y="433.64109" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Sirius</text>
+<circle cx="554.908070" cy="481.958406" r="13.10009" fill="#abc6ff" opacity=".10"/>
+<circle cx="554.908070" cy="481.958406" r="6.55004" fill="#abc6ff"/>
+<text x="568.45811" y="474.95841" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Wezen</text>
+<circle cx="565.005857" cy="491.804389" r="13.10009" fill="#97b9ff" opacity=".10"/>
+<circle cx="565.005857" cy="491.804389" r="6.55004" fill="#97b9ff"/>
+<circle cx="518.458346" cy="352.582166" r="13.10009" fill="#a5c3ff" opacity=".10"/>
+<circle cx="518.458346" cy="352.582166" r="6.55004" fill="#a5c3ff"/>
+<text x="532.00839" y="345.58217" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#bcbcbc">Procyon</text>
+<circle cx="519.426212" cy="254.719844" r="13.10009" fill="#b3ccff" opacity=".10"/>
+<circle cx="519.426212" cy="254.719844" r="6.55004" fill="#b3ccff"/>
+<circle cx="531.955618" cy="239.344868" r="13.10009" fill="#9dbdff" opacity=".10"/>
+<circle cx="531.955618" cy="239.344868" r="6.55004" fill="#9dbdff"/>
+<circle cx="347.795754" cy="306.356057" r="13.10009" fill="#9ebdff" opacity=".10"/>
+<circle cx="347.795754" cy="306.356057" r="6.55004" fill="#9ebdff"/>
+<circle cx="876.895175" cy="457.137666" r="6.68302" fill="#b2cbff" opacity=".10"/>
+<circle cx="876.895175" cy="457.137666" r="3.34151" fill="#b2cbff"/>
+<g fill="#bcbcbc" font-family="Segoe UI,Arial,sans-serif" font-size="17" letter-spacing="2">
+<text x="80" y="590">ABERRATION</text><text x="475" y="590">DOPPLER SHIFT</text><text x="935" y="590">SOL AT 1 AU</text>
+</g></svg>

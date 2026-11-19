@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800">
+  <title>Relativistic Spaceship Viewer — aberration window mark</title>
+  <desc>Angular open aperture, an amber light wedge, and two compressed cyan marks. No target or crosshair motif. Flat vector redraw of the selected logo concept.</desc>
+  <g fill="#e8e8e8">
+    <path d="M80 40 920 348 920 374 180 163 180 306 80 286Z"/>
+    <path d="M80 760 920 474 920 450 180 590 180 617 80 641Z"/>
+    <path d="M708 411 798 415 784 438 691 444Z"/>
+    <path d="M842 419 902 421 892 436 832 439Z"/>
+  </g>
+  <path fill="#e8e8e8" d="M80 373 675 428 80 486Z"/>
+</svg>

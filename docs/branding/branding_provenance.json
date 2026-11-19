@@ -1,0 +1,95 @@
+{
+  "status": "passed",
+  "size_px": [
+    1280,
+    640
+  ],
+  "png_bytes": 55155,
+  "view": {
+    "beta": 0.8660254037844386,
+    "heading_ra_deg": 84.0,
+    "heading_dec_deg": -1.0,
+    "camera": {
+      "forward": [
+        0.10451254307640281,
+        0.9943704248665338,
+        -0.01745240643728351
+      ],
+      "east": [
+        -0.9945218953682733,
+        0.10452846326765346,
+        0.0
+      ],
+      "north": [
+        0.0018242732252117483,
+        0.01735680032874465,
+        0.9998476951563913
+      ]
+    },
+    "camera_locked": true,
+    "hfov_deg": 80.0,
+    "vfov_deg": 21.11111111111111,
+    "rest_mag_limit": 8.0,
+    "doppler_colors": true,
+    "illustrative_brightness": true,
+    "labels": true,
+    "glow": true
+  },
+  "catalog_source": {
+    "source": "Inherited 0.1.0 built-in 33-object demo catalog",
+    "source_sha256": null,
+    "coordinate_frame": "unspecified equatorial frame",
+    "coordinate_epoch": "unspecified",
+    "magnitude_system": "V magnitude assumed by schema; calibration unspecified",
+    "retrieved_utc": null,
+    "selection": "none declared; completeness unknown",
+    "notes": [
+      "Approximate inherited values; original measurement citations, coordinate frame, and epoch unspecified.",
+      "M42 is an extended-object placeholder rendered as an illustrative point marker.",
+      "Catalog is sparse and not complete at any magnitude limit; distances are labels only."
+    ]
+  },
+  "visible_catalog_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    21,
+    25
+  ],
+  "named_labels_drawn": [
+    0,
+    1,
+    3,
+    9,
+    10,
+    11,
+    12,
+    13,
+    15
+  ],
+  "display": "Actual core x/y/RGB/marker areas; SVG point radius mapping sqrt(area/pi)*0.72, clipped 1.8..8 px; 10% halo; no inferred measurements.",
+  "brand": "Flat SVG redraw of selected logo 1; cyan/amber only in mark and scientific data.",
+  "theme": "Neutral charcoal/gray chrome; no decorative galaxy or AI-generated sky.",
+  "files": {
+    "social-preview.png": "2b29bb44ce3c76de239afba624e421cd612392eee33906879701553988eafbc5",
+    "social-preview.svg": "9a78df4f9c0d17cbdff2a004701023cf5d1a2c227039d6898511dfc23af7532f",
+    "viewer.ico": "fa6cdbffeaa58c9c85a448eeb7c2ec2608432a1bc606f30c1e85d9d9e129f525",
+    "viewer_mark_256.png": "fb6589c0ba472e974f94d8a84a0577b6d1a4b5816192fa1da4dbd8ec77855a4a",
+    "viewer_mark_monochrome.svg": "0f79d618a589cc63ad7120bb3a1b1619c1ce02c9ee9dda02a2a498bcc9c4426f"
+  }
+}

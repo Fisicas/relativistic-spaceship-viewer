@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.5 — unpublished charcoal cockpit and local catalog library, 2026-11-19
+
+- Use neutral charcoal/gray chrome and plot annotations, preserving scientific
+  RGB calculations. Adopt the selected angular-window logo as an inspectable
+  SVG, Windows icon, and real-sky README/social-preview artwork.
+- Add a thin viewport bezel, a long synchronized speed slider, and responsive
+  side readouts in wide focused views. Retain equal angular scales and 16:9 FOV.
+- Ask for demo/local Hipparcos on first launch, optionally remember the choice,
+  and store a verified local processed snapshot. Download the complete six-column
+  main table once; filter V locally. Preserve prior snapshots and catalog values.
+- Add cache-integrity, full-query, offline startup, cockpit, frozen, and installer
+  checks. Keep the original 33 named targets plus Sol. No GitHub publication.
+
 ## 0.2.4 — unpublished Doppler solar radiometry, 2026-11-19
 
 - Add per-ray uniform 5772 K blackbody spectra and CIE visible surface radiance

@@ -4,11 +4,17 @@ Explore the instantaneous apparent sky of an observer moving at a significant
 fraction of the speed of light. Aberration changes the directions; the Doppler
 factor changes the frequency. The physics stays visible alongside the view.
 
-**0.2.4 — local release candidate, unpublished.** The Qt interface, reproducible
+**0.2.5 — local release candidate, unpublished.** The Qt interface, reproducible
 exports, Windows installer, and managed updater are implemented. The prepared
 Windows binaries are unsigned; no GitHub release has been published.
 
-![Qt interface with Custom: Pollux and the object inspector](docs/images/v021/custom_pollux_heading.png)
+![Relativistic Spaceship Viewer — charcoal instrument theme and actual simulated sky](docs/branding/social-preview.png)
+
+The banner uses an actual γ=2 demo sky and the selected angular-window mark.
+The point-star RGB and marker brightness are illustrative. The app's control
+surfaces are charcoal and gray; physical source colors remain independent.
+
+![Focused cockpit with a long speed slider and side readouts](docs/images/v025/charcoal_focus_cockpit.png)
 
 ## Explore
 
@@ -34,19 +40,23 @@ Windows binaries are unsigned; no GitHub release has been published.
   changing angular size. See [geometry](docs/SOLAR_MODEL.md) and
   [spectrum, radiance, and display mapping](docs/SOLAR_RADIOMETRY.md).
 
-![Sol at the same 4-degree field with different boosts and exposures](docs/images/v024/sol_comparison.png)
-
-The outlines are annotations. CIE-derived colors: CIE 2019, CC BY-SA 4.0;
-attribution and model details are in the radiometry document.
 - **Focus sky** provides a 16:9 angular viewport with equal angular scales;
   visibility is recomputed, and leaving focus restores the previous FOV.
-- Import an explicitly labeled CSV catalog or optionally fetch Hipparcos.
+- Import an explicitly labeled CSV catalog, or download Hipparcos once and
+  load the verified local library offline. The startup chooser can remember
+  demo or Hipparcos. Refresh is explicit; changing speed, heading, or V limit
+  never downloads the catalog again. See [local catalog behavior](docs/CATALOG_LIBRARY.md).
   Imports show units, rejected rows, and a preview before applying the catalog.
 - Save a portable JSON scene, or export PNG, SVG, PDF, numeric arrays, and a
   complete scene snapshot into a new versioned folder.
 
 The Tau Ceti preset retains the original *Project Hail Mary* nod. This project is
 not affiliated with Andy Weir, the book, or any film adaptation.
+
+![Sol at the same 4-degree field with different boosts and exposures](docs/images/v025/sol_comparison.png)
+
+The outlines are annotations. CIE-derived colors: CIE 2019, CC BY-SA 4.0;
+attribution and model details are in the radiometry document.
 
 ## Orion at three speeds
 
@@ -57,19 +67,19 @@ illustrative, and the catalog is sparse and not magnitude-complete.
 
 | Rest, β = 0 | β = 0.30 | γ = 2, β = √3/2 |
 |---|---|---|
-| [![Orion at rest](docs/images/v02/orion_rest_v01/scene.png)](docs/images/v02/orion_rest_v01/scene.png) | [![Orion at beta 0.30](docs/images/v02/orion_beta030_v01/scene.png)](docs/images/v02/orion_beta030_v01/scene.png) | [![Orion at gamma 2](docs/images/v02/orion_gamma2_v01/scene.png)](docs/images/v02/orion_gamma2_v01/scene.png) |
+| [![Orion at rest](docs/images/v025/orion/orion_rest_v01/scene.png)](docs/images/v025/orion/orion_rest_v01/scene.png) | [![Orion at beta 0.30](docs/images/v025/orion/orion_beta030_v01/scene.png)](docs/images/v025/orion/orion_beta030_v01/scene.png) | [![Orion at gamma 2](docs/images/v025/orion/orion_gamma2_v01/scene.png)](docs/images/v025/orion/orion_gamma2_v01/scene.png) |
 
-The [3840 × 2160 rest/moving comparison](docs/images/v02/orion_comparison_v01/scene.png)
-also has [SVG](docs/images/v02/orion_comparison_v01/scene.svg),
-[PDF](docs/images/v02/orion_comparison_v01/scene.pdf), and a
-[portable scene](docs/images/v02/orion_comparison_v01/scene.json). Each example
+The [3840 × 2160 rest/moving comparison](docs/images/v025/orion/orion_comparison_v01/scene.png)
+also has [SVG](docs/images/v025/orion/orion_comparison_v01/scene.svg),
+[PDF](docs/images/v025/orion/orion_comparison_v01/scene.pdf), and a
+[portable scene](docs/images/v025/orion/orion_comparison_v01/scene.json). Each example
 folder includes its numeric arrays and provenance. The original 260-pixel JPEGs
 remain preserved in `docs/images/` as historical assets.
 
 ## Run locally
 
 For Windows without Python or Git, run the prepared
-`relativistic-spaceship-viewer-0.2.4-windows-x64-setup.exe`. It installs for the
+`relativistic-spaceship-viewer-0.2.5-windows-x64-setup.exe`. It installs for the
 current user and adds a Start menu shortcut. In a checkout, `Install_Viewer.cmd`
 uses a prepared installer in `dist\release`, or downloads the latest published
 stable installer after verifying its GitHub asset digest. A new online release
@@ -153,5 +163,5 @@ derived color data: CC BY-SA 4.0; see [attribution](spaceship_viewer/data/CIE_AT
 Windows builds include separate dependency
 license texts and an inventory under `licenses`. See the
 [local release checklist](docs/RELEASE_CHECKLIST.md) and
-[release notes](RELEASE_NOTES_v0.2.4.md) for the publication boundary and remaining
+[release notes](RELEASE_NOTES_v0.2.5.md) for the publication boundary and remaining
 clean-machine/live-update checks.

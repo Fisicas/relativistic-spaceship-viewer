@@ -172,7 +172,8 @@ def main():
                 time.sleep(.01)
             check(not viewer._fetching and error.call_count == 1, 'fetch errors reach GUI thread')
             check(viewer.catalog is old, 'fetch failure retains catalog')
-        with patch.object(module, 'fetch_hipparcos', return_value=built_in_catalog()):
+        with patch.object(module, 'fetch_hipparcos', return_value=built_in_catalog()), \
+             patch.object(module.catalog_cache,'save_cached'):
             viewer.start_fetch()
             deadline = time.monotonic()+3
             while viewer._fetching and time.monotonic() < deadline:
@@ -216,7 +217,7 @@ def main():
             settle()
             layouts.append({'requested': [width, height], 'actual': [viewer.width(), viewer.height()],
                             'canvas': [viewer.canvas.width(), viewer.canvas.height()]})
-            check(viewer.canvas.width() >= 320 and viewer.canvas.height() >= 330, f'viewport remains usable at {width}x{height}')
+            check(viewer.canvas.width() >= 320 and viewer.canvas.height() >= 280, f'viewport remains usable at {width}x{height}')
         viewer.focus_sky(True)
         settle()
         check(viewer.controls_scroll.isHidden() and viewer.inspector.isHidden(), 'focus mode expands viewport')
@@ -301,6 +302,44 @@ def main():
         check(viewer.solar_scroll.viewport().rect().contains(viewer.solar_outline_check.mapTo(viewer.solar_scroll.viewport(),viewer.solar_outline_check.rect().center())),
               'solar controls remain reachable by scrolling at 1060x700')
         check(viewer.solar_scroll.horizontalScrollBar().maximum()==0,'solar controls fit inspector width without horizontal scrolling')
+        viewer.cockpit_speed_slider.setValue(6500)
+        settle()
+        check(abs(viewer.view_state.beta-math.tanh(.65*math.atanh(module.MAX_BETA)))<1e-14,
+              'wide speed slider uses the existing rapidity mapping')
+        check(viewer.speed_slider.value()==viewer.cockpit_speed_slider.value(),'both speed sliders stay synchronized')
+        viewer.resize(1920,1080)
+        viewer.focus_sky(True)
+        app.processEvents();settle()
+        check(not viewer.left_pod.isHidden() and not viewer.right_pod.isHidden() and viewer.metrics_strip.isHidden(),
+              'wide focused view places readouts beside the bezel')
+        check(abs(viewer.panels[-1]['ax'].bbox.width/viewer.panels[-1]['ax'].bbox.height-16/9)<1e-9,
+              'bezel and instrument pods preserve 16:9 sky projection')
+        check(viewer.cockpit_speed_slider.width()>viewer.speed_slider.width()*2,'cockpit slider is substantially longer than sidebar control')
+        viewer.resize(1060,700);app.processEvents();settle()
+        check(viewer.left_pod.isHidden() and not viewer.metrics_strip.isHidden(),'narrow view restores top readouts without squeezing in side pods')
+        viewer.focus_sky(False)
+        cache_parent=ROOT/'.test-tmp';cache_parent.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=cache_parent) as directory, \
+             patch.object(module.catalog_cache,'data_root',return_value=Path(directory)), \
+             patch.object(module,'fetch_hipparcos',side_effect=AssertionError('Offline load must not fetch')) as fetch:
+            module.catalog_cache.save_cached(built_in_catalog())
+            viewer.load_hipparcos_library();settle()
+            check(viewer.catalog.n==33 and fetch.call_count==0,'verified local snapshot loads without a network query')
+            module.catalog_cache.set_startup_choice('hipparcos')
+            with patch.object(viewer,'catalog_startup_dialog') as prompt:
+                viewer.catalog_on_startup();settle()
+                check(prompt.call_count==0 and fetch.call_count==0,'remembered local library starts without a prompt or download')
+            module.catalog_cache.set_startup_choice('demo')
+            with patch.object(viewer,'catalog_startup_dialog') as prompt:
+                viewer.catalog_on_startup()
+                check(prompt.call_count==0,'remembered demo does not prompt every launch')
+            module.catalog_cache.set_startup_choice('ask')
+            def choose_demo(dialog):
+                button=next(b for b in dialog.findChildren(W.QPushButton) if b.text()=='Use demo')
+                button.click()
+                return W.QDialog.DialogCode.Accepted
+            with patch.object(W.QDialog,'exec',choose_demo):viewer.catalog_on_startup()
+            check(module.catalog_cache.startup_choice()=='demo','first-run catalog dialog remembers the explicit user choice')
         result = {'status': 'passed', 'checks': checks, 'logical_layouts': layouts,
                   'live_vizier_request': False, 'mode': 'Qt offscreen integration test'}
         with args.output.open('x', encoding='utf-8') as stream:

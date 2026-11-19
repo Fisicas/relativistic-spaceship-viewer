@@ -15,10 +15,7 @@ from .relativity import aberrate
 from .geometry import project_directions
 from .solar import compute_view
 
-BACKGROUND = '#080e19'
-FOREGROUND = '#d7e3f1'
-MUTED = '#7e93ad'
-ACCENT = '#6dd8ed'
+from .theme import BACKGROUND,FOREGROUND,MUTED,ACCENT,GRID,BORDER
 
 
 def draw_solar_disk(ax,state,geometry,labels,settings):
@@ -74,18 +71,18 @@ def draw_solar_disk(ax,state,geometry,labels,settings):
 def draw_view(ax, scene, state, presentation, original_rows, selected=None, solar=None):
     ax.set_facecolor(BACKGROUND)
     for spine in ax.spines.values():
-        spine.set_color('#243247')
+        spine.set_color(BORDER)
     ax.tick_params(colors=MUTED, labelsize=8, length=3)
     ax.set_xlim(-state.hfov_deg / 2, state.hfov_deg / 2)
     ax.set_ylim(-state.vfov_deg / 2, state.vfov_deg / 2)
     ax.set_aspect('equal', adjustable='box')
     ax.set_axisbelow(True)
     if presentation.grid:
-        ax.grid(color='#263447', linewidth=.55, alpha=.6)
+        ax.grid(color=GRID, linewidth=.55, alpha=.6)
     ax.set_xlabel('Horizontal angle (°)  ·  right = camera west', color=MUTED, fontsize=8, labelpad=9)
     ax.set_ylabel('Vertical angle (°)', color=MUTED, fontsize=8, labelpad=8)
-    ax.axhline(0, color='#39506b', lw=.6, alpha=.5)
-    ax.axvline(0, color='#39506b', lw=.6, alpha=.5)
+    ax.axhline(0, color=BORDER, lw=.6, alpha=.5)
+    ax.axvline(0, color=BORDER, lw=.6, alpha=.5)
     x, y = scene.x_deg[scene.visible], scene.y_deg[scene.visible]
     areas = scene.marker_area_pt2 * presentation.marker_scale
     if state.glow:
@@ -163,7 +160,7 @@ def add_labels(ax, scene, state, presentation, original_rows):
                                       (box.y0 < marker_boxes[:, 3]) & (box.y1 > marker_boxes[:, 1]))
             if inside and not marker_collision and not any(box.overlaps(other) for other in occupied):
                 label = ax.annotate(text, (x[i], y[i]), xytext=(dx, dy), textcoords='offset points',
-                                    color=ACCENT if original_rows[i] == presentation.selected_row else '#bbc9dc',
+                                    color=ACCENT if original_rows[i] == presentation.selected_row else FOREGROUND,
                                     fontsize=8, fontfamily='DejaVu Sans', ha=ha, va=va, zorder=5, annotation_clip=True)
                 occupied.append(box)
                 labels.append(label)
@@ -177,8 +174,11 @@ def draw_figure(figure, catalog, state, presentation, title, *, for_export=False
     figure.set_facecolor(BACKGROUND)
     count = 2 if presentation.comparison else 1
     axes = figure.subplots(1, count, squeeze=False)[0]
+    compact=not for_export and figure.bbox.height<420
     figure.subplots_adjust(left=.085 if count == 1 else .065, right=.975, bottom=.16 if for_export else .13,
-                           top=.77 if for_export else .90, wspace=.24)
+                           top=.77 if for_export else (.79 if compact else .88), wspace=.24)
+    if compact:
+        figure.subplots_adjust(bottom=.21)
     panels = []
     for i, ax in enumerate(axes):
         panel_state = replace(state, beta=0.) if count == 2 and i == 0 else state
@@ -189,6 +189,8 @@ def draw_figure(figure, catalog, state, presentation, title, *, for_export=False
         heading = 'MOVING OBSERVER' if moving else 'REST FRAME'
         dop = scene.doppler[scene.visible]
         subtitle = f'β {panel_state.beta:.6g}   ·   γ {lorentz_factor(panel_state.beta):.5g}   ·   {scene.n_visible} catalog objects'
+        if compact:
+            subtitle=f'β {panel_state.beta:.5g} · γ {lorentz_factor(panel_state.beta):.5g}'
         if solar is not None:
             subtitle += ' · Sol model'
         ax.set_title(heading + '\n' + subtitle, loc='left', color=FOREGROUND, fontsize=9, pad=13, linespacing=1.8)

@@ -1,6 +1,6 @@
 # Development and reproduction
 
-Version **0.2.4** is an unpublished local release candidate with the physics
+Version **0.2.5** is an unpublished local release candidate with the physics
 foundation, Qt UI, scientific exports, and Windows installation/update support.
 Use the completion report for the actual checks and final asset hashes. The
 version string alone does not indicate a Git tag or published release.
@@ -27,6 +27,11 @@ small stable launcher and installer. Neither helper imports the scientific GUI.
 entry point launch Qt. The legacy script's `--legacy-tk` option runs Tk.
 Importing the core or compatibility module does not initialize either GUI or
 Matplotlib. No module named `pyplot` is needed by the application.
+
+`theme.py` owns neutral chrome colors. `branding.py` and `assets/viewer_mark.svg`
+share the selected icon; `tools/generate_branding.py` creates inspectable SVG/PNG
+social artwork from actual core coordinates. `catalog_cache.py` stores bounded,
+checksummed, versioned processed Hipparcos snapshots and startup preferences.
 
 ## Windows verification
 

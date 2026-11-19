@@ -1,0 +1,17 @@
+{
+  "examples": [
+    "orion_rest_v01",
+    "orion_beta030_v01",
+    "orion_gamma2_v01",
+    "orion_comparison_v01"
+  ],
+  "single_dimensions": [
+    3840,
+    3840
+  ],
+  "comparison_dimensions": [
+    3840,
+    2160
+  ],
+  "settings": "Each scene.json is a portable full-catalog snapshot, not an external CSV reference."
+}

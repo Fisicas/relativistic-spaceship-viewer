@@ -151,15 +151,8 @@ def main():
             raise RuntimeError(f'Build command failed; see {log}')
     notices=work/'licenses'
     inventory=write_notices(notices)
-    from PIL import Image,ImageDraw
     icon=work/'viewer.ico'
-    canvas=Image.new('RGBA',(256,256),'#101c2c')
-    drawing=ImageDraw.Draw(canvas)
-    drawing.ellipse((52,52,204,204),outline='#6dd8ed',width=8)
-    drawing.line((28,128,228,128),fill='#6dd8ed',width=8)
-    drawing.line((128,28,128,228),fill='#6dd8ed',width=8)
-    drawing.ellipse((108,108,148,148),fill='#e8f8ff')
-    canvas.save(icon,sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
+    shutil.copy2(ROOT/'spaceship_viewer/assets/viewer.ico',icon)
     lock='\n'.join(sorted(f"{item['name']}=={item['version']}" for item in inventory))+'\n'
     (output/'requirements-runtime.lock').write_text(lock,encoding='utf-8')
     base=[sys.executable,'-X','utf8','-m','PyInstaller','--noconfirm','--noupx',
@@ -174,7 +167,8 @@ def main():
                    '--hidden-import','matplotlib.backends.backend_pdf',
                    '--exclude-module','astroquery.vizier.tests',
                    '--add-data',str(notices)+os.pathsep+'licenses',
-                   '--add-data',str(ROOT/'spaceship_viewer/data')+os.pathsep+'spaceship_viewer/data']
+                   '--add-data',str(ROOT/'spaceship_viewer/data')+os.pathsep+'spaceship_viewer/data',
+                   '--add-data',str(ROOT/'spaceship_viewer/assets')+os.pathsep+'spaceship_viewer/assets']
     # Real .py bytes accompany the frozen .pyz so export provenance hashes and
     # inspectable source remain available without relying on a developer checkout.
     for file in (ROOT/'spaceship_viewer').glob('*.py'):

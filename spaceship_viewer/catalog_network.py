@@ -13,7 +13,7 @@ HIPPARCOS_SERVERS = ('vizier.cfa.harvard.edu', 'vizier.idia.ac.za', 'vizier.cds.
 def fetch_hipparcos(max_vmag=8., *, servers=HIPPARCOS_SERVERS, timeout=15.):
     from astroquery.vizier import Vizier
     from .catalog import catalog_from_hipparcos_table
-    limit = finite_scalar(max_vmag, 'Hipparcos rest V magnitude limit')
+    limit = None if max_vmag is None else finite_scalar(max_vmag, 'Hipparcos rest V magnitude limit')
     timeout = finite_scalar(timeout, 'VizieR timeout')
     if timeout <= 0 or not servers or any(host not in HIPPARCOS_SERVERS for host in servers):
         raise ValueError('Use a listed VizieR HTTPS mirror and a positive timeout.')
@@ -23,12 +23,13 @@ def fetch_hipparcos(max_vmag=8., *, servers=HIPPARCOS_SERVERS, timeout=15.):
             query = Vizier(columns=['HIP', 'RAICRS', 'DEICRS', 'Vmag', 'B-V', 'Plx'],
                            row_limit=-1, vizier_server=host)
             query.TIMEOUT = timeout
-            result = query.query_constraints(catalog='I/239/hip_main', Vmag=f'<{limit}', cache=False)
+            filters={} if limit is None else {'Vmag':f'<{limit}'}
+            result = query.query_constraints(catalog='I/239/hip_main', cache=False, **filters)
             if not result:
                 raise RuntimeError('No Hipparcos table returned.')
             catalog = catalog_from_hipparcos_table(result[0], limit)
             notes = catalog.metadata.notes + (
-                f'VizieR HTTPS server: {host}; table I/239/hip_main; no response cache used.',
+                f'VizieR HTTPS server: {host}; table I/239/hip_main; no Astroquery response cache used.',
                 f'Mirror attempts before success: {len(failures)}; ' + ('; '.join(failures) or 'none failed.'))
             return replace(catalog, metadata=replace(catalog.metadata,
                 source=f'VizieR I/239/hip_main (ESA 1997), https://{host}/viz-bin/votable', notes=notes))

@@ -24,6 +24,8 @@ from .navigation import center_object, widescreen_fov, WIDESCREEN_RATIO,MIN_FOV
 from .solar import SolarSettings,solar_reference,solar_geometry,AU_M,SOLAR_RADIUS_M,REST_RADIUS_RAD
 from .solar_radiometry import summary as solar_radiance_summary, fitted_exposure, MIN_EV, MAX_EV
 from .plotting import draw_figure, BACKGROUND
+from .branding import icon_pixmap,MARK
+from . import catalog_cache
 from .presentation import Presentation
 from .relativity import MAX_BETA, lorentz_factor, rest_frame_half_angle
 from .session import load_document, save_document
@@ -31,40 +33,42 @@ from .state import ViewState
 from .targets import ReferenceTarget
 
 STYLE = '''
-QMainWindow, QWidget { background: #0e1623; color: #c8d7e8; font-family: 'Segoe UI'; font-size: 10pt; }
-QWidget#header { background: #101c2c; border-bottom: 1px solid #26394f; }
+QMainWindow, QWidget { background: #191919; color: #e2e2e2; font-family: 'Segoe UI'; font-size: 10pt; }
+QWidget#header { background: #202020; border-bottom: 1px solid #393939; }
 QLabel { background: transparent; }
-QLabel#brand { color: #ecf4fc; font-size: 16pt; font-weight: 600; }
-QLabel#eyebrow { color: #6dd8ed; font-size: 9pt; font-weight: 600; }
-QLabel#muted { color: #8299b4; font-size: 9pt; }
-QLabel#metric { color: #eaf3ff; font-size: 19pt; font-weight: 500; }
-QLabel#inspectorTitle { color: #eaf3ff; font-size: 17pt; font-weight: 500; }
-QFrame#metricCard { background: #142033; border: 1px solid #24364d; border-radius: 7px; }
-QGroupBox { border: 1px solid #27394f; border-radius: 7px; margin-top: 13px; padding: 12px 10px 9px; font-weight: 600; }
-QGroupBox::title { subcontrol-origin: margin; left: 11px; padding: 0px 5px; color: #74d9ed; }
-QPushButton, QToolButton { background: #1a2b40; color: #dbe8f6; border: 1px solid #354b66; border-radius: 5px; padding: 7px 10px; }
-QPushButton:hover, QToolButton:hover { background: #243f59; border-color: #74d9ed; }
-QPushButton:pressed { background: #142d43; }
-QPushButton:checked, QToolButton:checked { background: #16465a; border-color: #67cde5; }
-QPushButton#primary { background: #7dd9eb; color: #082233; border: none; font-weight: 600; }
-QPushButton:disabled { color: #60738b; border-color: #243447; }
-QDoubleSpinBox, QSpinBox, QComboBox, QLineEdit { background: #09111e; color: #dce9f7; border: 1px solid #334963; border-radius: 4px; padding: 5px; min-height: 20px; }
-QDoubleSpinBox:focus, QSpinBox:focus, QLineEdit:focus { border-color: #71cfe7; }
+QLabel#brand { color: #f0f0f0; font-size: 16pt; font-weight: 600; }
+QLabel#eyebrow { color: #d0d0d0; font-size: 9pt; font-weight: 600; }
+QLabel#muted { color: #a4a4a4; font-size: 9pt; }
+QLabel#metric { color: #ededed; font-size: 19pt; font-weight: 500; }
+QFrame#skyBezel { background: #222222; border: 1px solid #505050; border-radius: 10px; }
+QFrame#instrumentPod, QFrame#speedRail { background: #222222; border: 1px solid #393939; border-radius: 7px; }
+QLabel#inspectorTitle { color: #ededed; font-size: 17pt; font-weight: 500; }
+QFrame#metricCard { background: #242424; border: 1px solid #3b3b3b; border-radius: 7px; }
+QGroupBox { border: 1px solid #414141; border-radius: 7px; margin-top: 13px; padding: 12px 10px 9px; font-weight: 600; }
+QGroupBox::title { subcontrol-origin: margin; left: 11px; padding: 0px 5px; color: #c0c0c0; }
+QPushButton, QToolButton { background: #2a2a2a; color: #e8e8e8; border: 1px solid #484848; border-radius: 5px; padding: 7px 10px; }
+QPushButton:hover, QToolButton:hover { background: #363636; border-color: #c0c0c0; }
+QPushButton:pressed { background: #303030; }
+QPushButton:checked, QToolButton:checked { background: #414141; border-color: #a6a6a6; }
+QPushButton#primary { background: #dedede; color: #151515; border: none; font-weight: 600; }
+QPushButton:disabled { color: #777777; border-color: #333333; }
+QDoubleSpinBox, QSpinBox, QComboBox, QLineEdit { background: #171717; color: #e6e6e6; border: 1px solid #4b4b4b; border-radius: 4px; padding: 5px; min-height: 20px; }
+QDoubleSpinBox:focus, QSpinBox:focus, QLineEdit:focus { border-color: #b0b0b0; }
 QCheckBox { spacing: 7px; padding: 3px 0; font-weight: 400; }
-QCheckBox::indicator { width: 14px; height: 14px; border: 1px solid #54718f; border-radius: 3px; background: #0a1220; }
-QCheckBox::indicator:checked { background: #73d6e9; border-color: #73d6e9; }
-QSlider::groove:horizontal { height: 4px; background: #263d56; border-radius: 2px; }
-QSlider::handle:horizontal { width: 13px; margin: -5px 0; border-radius: 6px; background: #8de1ed; }
-QScrollArea { border: none; } QScrollBar:vertical { background: #0c1521; width: 9px; }
-QScrollBar::handle:vertical { background: #334963; min-height: 30px; border-radius: 4px; }
+QCheckBox::indicator { width: 14px; height: 14px; border: 1px solid #6a6a6a; border-radius: 3px; background: #171717; }
+QCheckBox::indicator:checked { background: #c4c4c4; border-color: #c4c4c4; }
+QSlider::groove:horizontal { height: 4px; background: #4a4a4a; border-radius: 2px; }
+QSlider::handle:horizontal { width: 13px; margin: -5px 0; border-radius: 6px; background: #dedede; }
+QScrollArea { border: none; } QScrollBar:vertical { background: #1c1c1c; width: 9px; }
+QScrollBar::handle:vertical { background: #4b4b4b; min-height: 30px; border-radius: 4px; }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
-QSplitter::handle { background: #223249; width: 1px; }
-QTabWidget::pane { border: none; } QTabBar::tab { padding: 9px 12px; color: #859eb8; }
-QTabBar::tab:selected { color: #8addec; border-bottom: 2px solid #78d8ec; }
-QPlainTextEdit, QTextBrowser { border: none; background: #0c1522; padding: 8px; color: #a9bdd4; }
-QStatusBar { background: #0a1220; color: #8ea6c1; border-top: 1px solid #26394f; }
-QMenuBar, QMenu { background: #121f30; color: #d1deec; } QMenu::item:selected { background: #25425c; }
-QToolTip { background: #1d344b; color: #ecf7ff; border: 1px solid #64849d; }
+QSplitter::handle { background: #3a3a3a; width: 1px; }
+QTabWidget::pane { border: none; } QTabBar::tab { padding: 9px 12px; color: #a0a0a0; }
+QTabBar::tab:selected { color: #eeeeee; border-bottom: 2px solid #c4c4c4; }
+QPlainTextEdit, QTextBrowser { border: none; background: #1c1c1c; padding: 8px; color: #c4c4c4; }
+QStatusBar { background: #171717; color: #a8a8a8; border-top: 1px solid #393939; }
+QMenuBar, QMenu { background: #202020; color: #d8d8d8; } QMenu::item:selected { background: #383838; }
+QToolTip { background: #303030; color: #eeeeee; border: 1px solid #777777; }
 '''
 
 
@@ -105,18 +109,7 @@ class Viewer(W.QMainWindow):
         self._update_messages = queue.Queue()
         self._checking_update = self._downloading_update = False
         self.setWindowTitle(f'Relativistic Spaceship Viewer {__version__}')
-        icon = QtGui.QPixmap(64, 64)
-        icon.fill(QtGui.QColor('#101c2c'))
-        painter = QtGui.QPainter(icon)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-        painter.setPen(QtGui.QPen(QtGui.QColor('#6dd8ed'), 2))
-        painter.drawEllipse(13, 13, 38, 38)
-        painter.drawLine(7, 32, 57, 32)
-        painter.drawLine(32, 7, 32, 57)
-        painter.setBrush(QtGui.QColor('#e8f8ff'))
-        painter.drawEllipse(27, 27, 10, 10)
-        painter.end()
-        self.setWindowIcon(QtGui.QIcon(icon))
+        self.setWindowIcon(QtGui.QIcon(str(MARK.parent/'viewer.ico')))
         self.setMinimumSize(1000, 680)
         self.resize(1450, 900)
         self.setStyleSheet(STYLE)
@@ -159,6 +152,35 @@ class Viewer(W.QMainWindow):
         layout.addWidget(group)
         return inner
 
+    def instrument_pod(self,fields):
+        frame=W.QFrame()
+        frame.setObjectName('instrumentPod')
+        frame.setFixedWidth(145)
+        layout=W.QVBoxLayout(frame)
+        layout.setContentsMargins(12,20,12,18)
+        layout.setSpacing(12)
+        for title,key in fields:
+            layout.addWidget(label(title,'muted',True))
+            value=label('—','metric',True)
+            value.setStyleSheet('font-size:17pt;')
+            layout.addWidget(value)
+            self.pod_values[key]=value
+        layout.addStretch()
+        layout.addWidget(label('Instantaneous\nobserver event','muted',True))
+        return frame
+
+    def _update_cockpit_layout(self):
+        if not hasattr(self,'left_pod'):return
+        expanded=self.focus_button.isChecked() and self.width()>=1600 and self.height()>=820 and not self.presentation.comparison
+        self.left_pod.setVisible(expanded)
+        self.right_pod.setVisible(expanded)
+        self.metrics_strip.setVisible(not expanded)
+
+    def resizeEvent(self,event):
+        super().resizeEvent(event)
+        self._update_cockpit_layout()
+        if hasattr(self,'render_timer'):self._schedule()
+
     def _build_ui(self):
         root = W.QWidget()
         self.setCentralWidget(root)
@@ -169,9 +191,13 @@ class Viewer(W.QMainWindow):
         header.setObjectName('header')
         bar = W.QHBoxLayout(header)
         bar.setContentsMargins(20, 13, 20, 13)
+        mark=W.QLabel()
+        mark.setPixmap(icon_pixmap(44))
+        mark.setFixedSize(46,46)
+        bar.addWidget(mark)
         brand = W.QVBoxLayout()
         brand.setSpacing(2)
-        brand.addWidget(label('RELATIVISTIC SPACESHIP VIEWER', 'brand'))
+        brand.addWidget(label('Relativistic Spaceship Viewer', 'brand'))
         brand.addWidget(label('An instantaneous sky, seen through a Lorentz boost', 'muted'))
         bar.addLayout(brand)
         bar.addStretch()
@@ -283,10 +309,12 @@ class Viewer(W.QMainWindow):
         self.source_text = label('', 'muted', True)
         source.addWidget(self.source_text)
         self.import_button = self.button('Import CSV…', self.import_csv)
-        self.fetch_button = self.button('Fetch Hipparcos', self.start_fetch)
+        self.fetch_button = self.button('Load local Hipparcos', self.load_hipparcos_library)
         self.demo_button = self.button('Restore demo catalog', self.restore_demo)
         for button in (self.import_button, self.fetch_button, self.demo_button):
             source.addWidget(button)
+        source.addWidget(self.button('Download / refresh Hipparcos…',self.start_fetch))
+        source.addWidget(self.button('Catalog startup…',self.catalog_startup_dialog))
         source.addWidget(self.button('Catalog provenance…', self.show_provenance))
         controls.addStretch()
 
@@ -294,7 +322,9 @@ class Viewer(W.QMainWindow):
         central = W.QVBoxLayout(center)
         central.setContentsMargins(14, 14, 14, 7)
         central.setSpacing(10)
-        metrics = W.QHBoxLayout()
+        self.metrics_strip=W.QWidget()
+        metrics = W.QHBoxLayout(self.metrics_strip)
+        metrics.setContentsMargins(0,0,0,0)
         self.metrics = {}
         for title, key in (('LORENTZ FACTOR', 'gamma'), ('CATALOG DOPPLER RANGE', 'doppler'), ('CATALOG VISIBLE / LOADED', 'count')):
             card = W.QFrame()
@@ -306,12 +336,46 @@ class Viewer(W.QMainWindow):
             self.metrics[key] = value
             card_layout.addWidget(value)
             metrics.addWidget(card)
-        central.addLayout(metrics)
+        central.addWidget(self.metrics_strip)
         self.figure = Figure(figsize=(8., 7.), dpi=100, facecolor=BACKGROUND)
         self.canvas = FigureCanvasQTAgg(self.figure)
-        self.canvas.setMinimumSize(320, 330)
+        self.canvas.setMinimumSize(320, 280)
         self.canvas.setFocusPolicy(QtCore.Qt.FocusPolicy.ClickFocus)
-        central.addWidget(self.canvas, 1)
+        sky_row=W.QHBoxLayout()
+        sky_row.setSpacing(12)
+        self.pod_values={}
+        self.left_pod=self.instrument_pod((('LORENTZ γ','gamma'),('SPEED β','beta')))
+        self.right_pod=self.instrument_pod((('CATALOG D','doppler'),('VISIBLE / LOADED','count')))
+        sky_row.addWidget(self.left_pod)
+        self.sky_bezel=W.QFrame()
+        self.sky_bezel.setObjectName('skyBezel')
+        bezel_layout=W.QVBoxLayout(self.sky_bezel)
+        bezel_layout.setContentsMargins(7,7,7,7)
+        bezel_layout.setSpacing(0)
+        bezel_layout.addWidget(self.canvas,1)
+        sky_row.addWidget(self.sky_bezel,1)
+        sky_row.addWidget(self.right_pod)
+        self.left_pod.hide();self.right_pod.hide()
+        central.addLayout(sky_row,1)
+        self.speed_rail=W.QFrame()
+        self.speed_rail.setObjectName('speedRail')
+        rail_layout=W.QVBoxLayout(self.speed_rail)
+        rail_layout.setContentsMargins(12,8,12,8)
+        rail_layout.setSpacing(4)
+        rail_top=W.QHBoxLayout()
+        self.rail_speed_text=label('','muted')
+        rail_top.addWidget(self.rail_speed_text,1)
+        for text,value in (('Rest',0.),('0.30 c',.3),('γ = 2',math.sqrt(3)/2)):
+            rail_top.addWidget(self.button(text,lambda checked=False,v=value:self.set_beta(v)))
+        rail_top.addWidget(self.button('Catalog…',self.catalog_startup_dialog))
+        rail_layout.addLayout(rail_top)
+        self.cockpit_speed_slider=W.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.cockpit_speed_slider.setRange(0,10000)
+        self.cockpit_speed_slider.setAccessibleName('Wide cockpit rapidity speed slider')
+        self.cockpit_speed_slider.setToolTip('Speed uses the same rapidity scale as the sidebar; both controls stay synchronized.')
+        self.cockpit_speed_slider.valueChanged.connect(lambda v:self.set_beta(math.tanh(v/10000*math.atanh(MAX_BETA))))
+        rail_layout.addWidget(self.cockpit_speed_slider)
+        central.addWidget(self.speed_rail)
         self.scene_note = label('', 'muted', True)
         central.addWidget(self.scene_note)
         self.splitter.addWidget(center)
@@ -510,6 +574,9 @@ class Viewer(W.QMainWindow):
         for widget, value in settings:
             with QtCore.QSignalBlocker(widget):
                 widget.setValue(value)
+        with QtCore.QSignalBlocker(self.cockpit_speed_slider):
+            self.cockpit_speed_slider.setValue(round(math.atanh(s.beta)/math.atanh(MAX_BETA)*10000))
+        self._update_cockpit_layout()
         targets = ((84., -1.), (266.4168, -29.0078), (26.0170, -15.9375))
         selection = self._inspection_selection()
         self.preset.setItemText(3, f'Custom: {selection[0].name[selection[1]]}' if selection else 'Custom heading')
@@ -551,6 +618,9 @@ class Viewer(W.QMainWindow):
         d = scene.doppler[scene.visible]
         self.metrics['doppler'].setText(f'{d.min():.3g} – {d.max():.3g}' if len(d) else '—')
         self.metrics['count'].setText(f'{scene.n_visible} / {self.catalog.n:,}')
+        for key,value in self.pod_values.items():
+            value.setText(f'{self.view_state.beta:.6f}' if key=='beta' else self.metrics[key].text())
+        self.rail_speed_text.setText(f'β {self.view_state.beta:.7g} · γ {lorentz_factor(self.view_state.beta):.5g}')
         ra, dec = self.view_state.camera.radec
         self.camera_text.setText(f'Camera RA {ra:.4f}° · Dec {dec:.4f}°')
         note = f'β {self.view_state.beta:.9g}  ·  '
@@ -674,7 +744,7 @@ class Viewer(W.QMainWindow):
         self.object_name.setText('Sol · our Sun')
         radius=math.degrees(geometry['radius_rad'])
         limit='<p>The disk covers at least half the sky; its complete limb cannot fit this front-hemisphere projection.</p>' if radius>=90 else ''
-        self.object_details.setHtml(f'''<p style="color:#78d6eb">FINITE SOLAR DISK · FIXED 1 AU MODEL</p>
+        self.object_details.setHtml(f'''<p style="color:#c8c8c8">FINITE SOLAR DISK · FIXED 1 AU MODEL</p>
 <p>Observer distance: 1 AU ({AU_M:,.0f} m)<br>IAU nominal radius: {SOLAR_RADIUS_M/1000:,.0f} km</p>
 <p><b>Rest angular diameter</b><br>{math.degrees(2*REST_RADIUS_RAD):.7f}°</p>
 <p><b>Apparent limb-cone half-angle</b><br>{radius:.7g}°<br>Through-disk diameter: {2*radius:.7g}°</p>
@@ -711,12 +781,12 @@ class Viewer(W.QMainWindow):
                 status='OCCULTED BY SOL'
         provenance = ('Original demo coordinates and approximate values; frame/epoch unspecified. '
                       'Navigation reference, not an identified Hipparcos measurement.') if reference else catalog.metadata.source
-        self.object_details.setHtml(f'''<p style="color:#78d6eb">{status}</p>
+        self.object_details.setHtml(f'''<p style="color:#c8c8c8">{status}</p>
 <p>{html.escape(provenance)}</p>
 <p><b>Rest direction</b><br>RA {info['rest_ra_deg']:.6f}°<br>Dec {info['rest_dec_deg']:.6f}°</p>
 <p><b>Apparent direction</b><br>RA {info['apparent_ra_deg']:.6f}°<br>Dec {info['apparent_dec_deg']:.6f}°</p>
 <p><b>Angle to velocity</b><br>Rest {info['rest_heading_angle_deg']:.4f}°<br>Apparent {info['apparent_heading_angle_deg']:.4f}°</p>
-<p><b>Doppler factor</b><br><span style="color:#8ae3ef;font-size:18pt">{info['doppler_factor']:.7g}</span></p>
+<p><b>Doppler factor</b><br><span style="color:#ededed;font-size:18pt">{info['doppler_factor']:.7g}</span></p>
 <p><b>Example wavelength</b><br>550 nm → {info['shifted_wavelength_nm']:.4g} nm<br>Example only; not a measured line.</p>
 <p>Rest V magnitude: {info['rest_vmag']:.3f}<br>Display proxy: {info['display_magnitude_proxy']:.3f}<br>B−V: {optional(info['bv'], '')}<br>Distance label: {optional(info['distance_pc'], 'pc')}</p>
 <p>{html.escape(info['kind'])}. {'Unknown B−V uses 0.65 for display.' if info['bv'] is None else ''}
@@ -818,18 +888,83 @@ class Viewer(W.QMainWindow):
         layout.addWidget(self.button('Close', dialog.accept))
         dialog.exec()
 
-    def start_fetch(self):
+    def load_hipparcos_library(self):
+        try:
+            catalog,info=catalog_cache.load_cached(minimum_limit=self.view_state.rest_mag_limit)
+            self.apply_catalog(catalog,'Hipparcos · local library')
+            self.statusBar().showMessage(f"Loaded {catalog.n:,} stars from verified local snapshot; no network request.")
+        except (OSError,ValueError,KeyError,TypeError) as exc:
+            self.catalog_startup_dialog(reason=str(exc))
+
+    def catalog_startup_dialog(self,checked=False,*,reason=None):
+        if self._fetching:return
+        dialog=W.QDialog(self)
+        dialog.setWindowTitle('Choose a sky catalog')
+        dialog.setMinimumWidth(440)
+        layout=W.QVBoxLayout(dialog)
+        layout.addWidget(label('Choose a sky catalog','inspectorTitle'))
+        info=None
+        try:info=catalog_cache.cached_info()
+        except (OSError,ValueError,KeyError,TypeError) as exc:reason=str(exc)
+        if info:
+            description=(f"A local Hipparcos snapshot is available: {info['accepted_rows']:,} accepted stars, "
+                         f"{info['compressed_bytes']/1e6:.2f} MB. It can be loaded offline.")
+        else:
+            description=('No local Hipparcos copy is available. Download the six required main-catalog columns once, '
+                         'then reuse the verified local snapshot offline. The 33-object demo is always available.')
+        layout.addWidget(label(description,'muted',True))
+        if reason:layout.addWidget(label(reason,'muted',True))
+        remember=W.QCheckBox('Remember my choice for next launch')
+        remember.setChecked(True)
+        layout.addWidget(remember)
+        actions=W.QDialogButtonBox()
+        local=actions.addButton('Load local Hipparcos' if info else 'Download Hipparcos once',W.QDialogButtonBox.ButtonRole.AcceptRole)
+        demo=actions.addButton('Use demo',W.QDialogButtonBox.ButtonRole.ActionRole)
+        cancel=actions.addButton(W.QDialogButtonBox.StandardButton.Cancel)
+        decision={'value':None}
+        def choose(value):decision['value']=value;dialog.accept()
+        local.clicked.connect(lambda:choose('hipparcos'))
+        demo.clicked.connect(lambda:choose('demo'))
+        cancel.clicked.connect(dialog.reject)
+        layout.addWidget(actions)
+        if dialog.exec()!=W.QDialog.DialogCode.Accepted:return
+        choice=decision['value']
+        if choice is None:return
+        if choice=='demo':
+            self.restore_demo()
+            catalog_cache.set_startup_choice('demo' if remember.isChecked() else 'ask')
+        elif info:
+            try:
+                catalog,loaded=catalog_cache.load_cached(minimum_limit=self.view_state.rest_mag_limit)
+                self.apply_catalog(catalog,'Hipparcos · local library')
+                catalog_cache.set_startup_choice('hipparcos' if remember.isChecked() else 'ask')
+            except (OSError,ValueError,KeyError,TypeError) as exc:
+                self.error('Local Hipparcos could not be loaded',str(exc)+'\nUse Download / refresh Hipparcos to create a new snapshot. The current catalog is unchanged.')
+        else:
+            # Remember only after a complete successful download and save.
+            self.start_fetch(remember_startup=remember.isChecked())
+
+    def catalog_on_startup(self):
+        choice=catalog_cache.startup_choice()
+        if choice=='demo':return
+        if choice=='hipparcos':self.load_hipparcos_library()
+        else:self.catalog_startup_dialog()
+
+    def start_fetch(self,checked=False,*,remember_startup=None):
         if self._fetching:
             return
-        limit = self.view_state.rest_mag_limit
+        limit = None  # Cache the complete six-column main table, filter V locally.
         revision = self._catalog_revision
         self._fetching = True
+        self._remember_catalog_after_fetch=remember_startup
         for button in (self.fetch_button, self.import_button, self.demo_button):
             button.setEnabled(False)
-        self.statusBar().showMessage(f'Fetching Hipparcos with rest V < {limit:g}…')
+        self.statusBar().showMessage('Downloading the Hipparcos main table and saving a local snapshot…')
         def worker():
             try:
-                self._messages.put((True, fetch_hipparcos(limit), limit, revision))
+                result=fetch_hipparcos(limit)
+                catalog_cache.save_cached(result,server_vmag_limit=limit)
+                self._messages.put((True, result, limit, revision))
             except Exception as exc:
                 self._messages.put((False, str(exc), limit, revision))
         threading.Thread(target=worker, daemon=True).start()
@@ -846,7 +981,10 @@ class Viewer(W.QMainWindow):
             self.statusBar().showMessage('A newer catalog was opened; the earlier fetch result was discarded.')
             return
         if ok:
-            self.apply_catalog(result, f'Hipparcos · rest V < {limit:g}')
+            self.apply_catalog(result,'Hipparcos · local library' if limit is None else f'Hipparcos · rest V < {limit:g}')
+            remember=getattr(self,'_remember_catalog_after_fetch',None)
+            if remember is not None:catalog_cache.set_startup_choice('hipparcos' if remember else 'ask')
+            self.statusBar().showMessage(f'Hipparcos saved locally: {result.n:,} accepted stars. Next load works offline.')
         else:
             self.error('Hipparcos fetch failed', result)
             self.statusBar().showMessage('Fetch failed; previous catalog retained.')
@@ -918,6 +1056,10 @@ class Viewer(W.QMainWindow):
 
     def _update_menu(self):
         menu=self.menuBar().addMenu('Application')
+        menu.addAction('Catalog startup…', self.catalog_startup_dialog)
+        menu.addAction('Load local Hipparcos', self.load_hipparcos_library)
+        menu.addAction('Download / refresh Hipparcos…', self.start_fetch)
+        menu.addSeparator()
         menu.addAction('Check for updates…', lambda: self.check_updates(automatic=False))
         menu.addAction('Roll back previous installed build…', self.queue_rollback)
         automatic=menu.addAction('Check for stable releases at startup')
@@ -1053,6 +1195,7 @@ def main():
     app.setStyle('Fusion')
     viewer = Viewer()
     viewer.show()
+    QtCore.QTimer.singleShot(250,viewer.catalog_on_startup)
     return app.exec()
 
 
