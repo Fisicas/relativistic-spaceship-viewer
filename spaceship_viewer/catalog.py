@@ -263,7 +263,7 @@ def catalog_from_hipparcos_table(tab, max_vmag):
              "Positive parallax inverted in mas to pc; no distance inference or uncertainty propagation.",
              "Unknown B-V and distance remain NaN; completeness is not certified.",
              "Live table is not cached by this adapter; save source separately for archival reproduction.")
-    report = ImportReport(len(ra), int(valid.sum()), tuple(RowIssue(i + 1, "invalid required coordinate or magnitude")
+    report = ImportReport(len(ra), int(valid.sum()), tuple(RowIssue(int(i) + 1, "invalid required coordinate or magnitude")
                           for i in np.flatnonzero(~valid)), notes)
     if not valid.any():
         raise CatalogImportError("Hipparcos table has no usable rows.", report)
@@ -277,10 +277,5 @@ def catalog_from_hipparcos_table(tab, max_vmag):
 
 
 def fetch_hipparcos(max_vmag=8.):
-    from astroquery.vizier import Vizier
-    max_vmag = finite_scalar(max_vmag, "Hipparcos rest V magnitude limit")
-    query = Vizier(columns=["HIP", "RAICRS", "DEICRS", "Vmag", "B-V", "Plx"], row_limit=-1)
-    result = query.query_constraints(catalog="I/239/hip_main", Vmag=f"<{max_vmag}")
-    if not result:
-        raise RuntimeError("No Hipparcos result returned by VizieR.")
-    return catalog_from_hipparcos_table(result[0], max_vmag)
+    from .catalog_network import fetch_hipparcos as fetch_from_mirrors
+    return fetch_from_mirrors(max_vmag)

@@ -20,6 +20,7 @@ from .demo_catalog import built_in_catalog
 from .exporting import export_scene
 from .geometry import CameraPose
 from .inspection import inspect_object
+from .navigation import center_object, widescreen_fov, WIDESCREEN_RATIO
 from .plotting import draw_figure, BACKGROUND
 from .presentation import Presentation
 from .relativity import MAX_BETA, lorentz_factor, rest_frame_half_angle
@@ -94,6 +95,7 @@ class Viewer(W.QMainWindow):
         self._catalog_revision = 0
         self._messages = queue.Queue()
         self._render_count = 0
+        self._focus_fov_before = None
         self.install_root = os.environ.get('RSV_INSTALL_ROOT')
         self._update_messages = queue.Queue()
         self._checking_update = self._downloading_update = False
@@ -218,7 +220,9 @@ class Viewer(W.QMainWindow):
         pointing = self.group(controls, 'HEADING & CAMERA')
         self.preset = W.QComboBox()
         self.preset.addItems(['Orion', 'Galactic Center', 'Tau Ceti', 'Custom heading'])
-        self.preset.currentIndexChanged.connect(self.apply_preset)
+        self.preset.setPlaceholderText('Manual RA / Dec')
+        self.preset.setToolTip('Choose a velocity heading. Custom uses the inspector object’s rest direction.')
+        self.preset.activated.connect(self.apply_preset)
         pointing.addWidget(self.preset)
         form = W.QFormLayout()
         self.ra_spin, self.dec_spin = spin(0., 359.999999, 84., 6), spin(-90., 90., -1., 6)
@@ -316,14 +320,14 @@ class Viewer(W.QMainWindow):
         inspect_layout.addWidget(label('OBJECT INSPECTOR', 'eyebrow'))
         self.object_combo = W.QComboBox()
         self.object_combo.setPlaceholderText('Select a catalog object')
-        self.object_combo.currentIndexChanged.connect(lambda i: self.select_row(i if i >= 0 else None))
+        self.object_combo.activated.connect(lambda i: self.select_row(i if i >= 0 else None))
         inspect_layout.addWidget(self.object_combo)
         self.object_name = label('Choose an object', 'inspectorTitle', True)
         inspect_layout.addWidget(self.object_name)
         self.object_details = W.QTextBrowser()
         self.object_details.setOpenExternalLinks(False)
         inspect_layout.addWidget(self.object_details, 1)
-        inspect_layout.addWidget(label('Click a star, or choose any catalog object above. An object may be outside the current FOV.', 'muted', True))
+        inspect_layout.addWidget(label('Selecting centers the moving view and unlocks the camera; velocity stays unchanged. Choose Custom in Heading & Camera to steer. The rest-magnitude cut still applies.', 'muted', True))
         self.inspector.addTab(inspect_page, 'Object')
         self.physics_page = W.QTextBrowser()
         self.physics_page.setHtml('''<h3>Light, transformed</h3><p>Source directions point from observer to source. Photon momentum points the other way.</p>
@@ -364,6 +368,9 @@ class Viewer(W.QMainWindow):
             self.render_timer.start()
 
     def change(self, **kwargs):
+        if self._focus_fov_before is not None and ('hfov_deg' in kwargs or 'vfov_deg' in kwargs):
+            vertical = kwargs.get('vfov_deg', kwargs.get('hfov_deg', self.view_state.hfov_deg) / WIDESCREEN_RATIO)
+            kwargs['hfov_deg'], kwargs['vfov_deg'] = widescreen_fov(vertical)
         self.view_state = replace(self.view_state, **kwargs)
         self._schedule()
 
@@ -378,9 +385,16 @@ class Viewer(W.QMainWindow):
         self.set_beta(math.sqrt(max(0., (gamma-1.) * (gamma+1.))) / gamma)
 
     def apply_preset(self, index):
-        if index < 3:
+        if 0 <= index < 3:
             ra, dec = ((84., -1.), (266.4168, -29.0078), (26.0170, -15.9375))[index]
             self.view_state = self.view_state.with_heading(ra, dec)
+            self._schedule()
+        elif index == 3 and self.presentation.selected_row is not None:
+            row = self.presentation.selected_row
+            # Rest catalog direction defines a velocity heading. A source
+            # exactly along that heading remains centered under aberration.
+            self.view_state = self.view_state.with_lock(False).with_heading(
+                float(self.catalog.ra_deg[row]), float(self.catalog.dec_deg[row])).with_lock(True)
             self._schedule()
 
     def apply_heading(self):
@@ -399,6 +413,7 @@ class Viewer(W.QMainWindow):
         self._schedule()
 
     def reset(self):
+        self.focus_sky(False)
         self.view_state, self.presentation = ViewState(), Presentation()
         self._schedule()
 
@@ -406,6 +421,16 @@ class Viewer(W.QMainWindow):
         self.change_presentation(comparison=value)
 
     def focus_sky(self, focused):
+        with QtCore.QSignalBlocker(self.focus_button):
+            self.focus_button.setChecked(focused)
+        if focused and self._focus_fov_before is None:
+            self._focus_fov_before = (self.view_state.hfov_deg, self.view_state.vfov_deg)
+            horizontal, vertical = widescreen_fov(self.view_state.vfov_deg)
+            self.view_state = replace(self.view_state, hfov_deg=horizontal, vfov_deg=vertical)
+        elif not focused and self._focus_fov_before is not None:
+            horizontal, vertical = self._focus_fov_before
+            self.view_state = replace(self.view_state, hfov_deg=horizontal, vfov_deg=vertical)
+            self._focus_fov_before = None
         self.controls_scroll.setVisible(not focused)
         self.inspector.setVisible(not focused and self.inspect_button.isChecked())
         self._schedule()
@@ -421,8 +446,12 @@ class Viewer(W.QMainWindow):
             with QtCore.QSignalBlocker(widget):
                 widget.setValue(value)
         targets = ((84., -1.), (266.4168, -29.0078), (26.0170, -15.9375))
+        row = p.selected_row
+        self.preset.setItemText(3, f'Custom: {self.catalog.name[row]}' if row is not None else 'Custom heading')
+        if row is not None:
+            targets += ((float(self.catalog.ra_deg[row]), float(self.catalog.dec_deg[row])),)
         preset_index = next((i for i, (ra, dec) in enumerate(targets)
-                             if abs(s.heading_ra_deg-ra) < 1e-9 and abs(s.heading_dec_deg-dec) < 1e-9), 3)
+                             if abs(s.heading_ra_deg-ra) < 1e-9 and abs(s.heading_dec_deg-dec) < 1e-9), -1 if row is not None else 3)
         with QtCore.QSignalBlocker(self.preset):
             self.preset.setCurrentIndex(preset_index)
         for widget, value in ((self.lock_check, s.camera_locked), (self.compare_button, p.comparison),
@@ -452,6 +481,8 @@ class Viewer(W.QMainWindow):
             note += f'Central half-angle {self.view_state.hfov_deg/2:g}° corresponds to {half:.2f}° in rest sky. '
         else:
             note += 'Camera independent of velocity. '
+        if self._focus_fov_before is not None:
+            note += f'16:9 angular viewport · FOV {self.view_state.hfov_deg:g}° × {self.view_state.vfov_deg:g}°. '
         self.scene_note.setText(note + 'Illustrative RGB / marker brightness; no travel or calibrated photometry.')
         self.source_text.setText(f'{self.catalog.n:,} objects · {self.catalog.metadata.coordinate_epoch}\nCompleteness unknown')
         self._update_inspector()
@@ -467,6 +498,8 @@ class Viewer(W.QMainWindow):
             self.object_combo.setCurrentIndex(-1)
 
     def select_row(self, row):
+        if row is not None:
+            self.view_state = center_object(self.catalog, self.view_state, row)
         self.presentation = replace(self.presentation, selected_row=row)
         self._schedule()
 
@@ -618,6 +651,7 @@ class Viewer(W.QMainWindow):
             return
         try:
             catalog, state, presentation, title = load_document(path)
+            self.focus_sky(False)
             self._catalog_revision += 1
             self.catalog, self.view_state, self.presentation, self.catalog_title = catalog, state, presentation, title
             self._populate_objects()

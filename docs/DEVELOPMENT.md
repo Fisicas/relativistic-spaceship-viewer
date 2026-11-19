@@ -1,6 +1,6 @@
 # Development and reproduction
 
-Version **0.2.0** is an unpublished local release candidate with the physics
+Version **0.2.1** is an unpublished local release candidate with the physics
 foundation, Qt UI, scientific exports, and Windows installation/update support.
 Use the completion report for the actual checks and final asset hashes. The
 version string alone does not indicate a Git tag or published release.
@@ -107,6 +107,16 @@ voyage models require further validation. The labels, glow, grid, and marker
 area scale are presentation choices, not additional physical transforms.
 
 ## Build and exercise the Windows package
+
+The 0.2.1 patch adds `navigation.py` for camera-only apparent-object targeting
+and a 16:9 independent-angular-axis FOV. `catalog_network.py` provides explicit
+HTTPS mirror fallback without global Astroquery configuration changes.
+`tools/check_hipparcos_live.py --output-dir <new-folder>` deliberately contacts
+VizieR and saves a versioned diagnostic and full portable catalog snapshot.
+`python -m spaceship_viewer --check-hipparcos <new-report.json>` performs a live
+retrieval/serialization diagnostic and is also available in the frozen EXE.
+These explicit live checks are separate from `--self-test`, which blocks Python
+socket network attempts. The test suite uses controlled response fixtures.
 
 Use a dedicated Windows x64 Python 3.12.10 environment, with
 `packaging/requirements-runtime.lock` and `packaging/requirements-build.lock`.

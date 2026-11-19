@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.1 — unpublished local interaction/service patch, 2026-11-19
+
+- Center inspector selections on their apparent direction without changing
+  velocity; name the custom heading after the selected object and steer only
+  when that heading is chosen. Preserve the three fixed heading presets.
+- Add a 16:9 focus viewport with recomputed visibility, equal angular scales,
+  ratio-preserving zoom, and restoration of the previous field of view.
+- Recover Hipparcos retrieval through CDS-listed HTTPS mirrors with bounded
+  timeouts and endpoint provenance; preserve catalog values and import rules.
+- Make rejected-row indices JSON serializable when real Hipparcos rows have
+  invalid required coordinates or magnitudes.
+- Add regression, Qt, frozen, and explicit live-service verification tools.
+
 ## 0.2.0 — unpublished local release candidate, 2026-11-19
 
 - Add an unsigned, self-contained per-user Windows setup and portable package,

@@ -73,6 +73,27 @@ def main():
         settle()
         check(viewer.object_name.text() == 'Betelgeuse', 'object inspector selects by catalog row')
         check('550' in viewer.object_details.toPlainText(), 'wavelength example is labeled')
+        old_heading = viewer.view_state.velocity_direction.copy()
+        old_doppler = viewer.last_scene.doppler.copy()
+        row = viewer.catalog.name.tolist().index('Sirius')
+        viewer.object_combo.setCurrentIndex(row)
+        viewer.object_combo.activated.emit(row)
+        settle()
+        check(viewer.preset.itemText(3) == 'Custom: Sirius', 'custom target label follows inspector object')
+        check(not viewer.view_state.camera_locked and np.array_equal(old_heading,viewer.view_state.velocity_direction),
+              'inspector centering unlocks camera without steering velocity')
+        check(np.array_equal(old_doppler,viewer.last_scene.doppler), 'inspector centering preserves Doppler factors')
+        target = int(np.flatnonzero(viewer.panels[-1]['rows'] == row)[0])
+        scene = viewer.last_scene
+        check(abs(scene.x_deg[scene.visible][target]) < 1e-9 and abs(scene.y_deg[scene.visible][target]) < 1e-9,
+              'inspector selection centers apparent direction in moving viewport')
+        viewer.preset.setCurrentIndex(3)
+        viewer.preset.activated.emit(3)
+        settle()
+        check(viewer.view_state.camera_locked and abs(viewer.view_state.heading_ra_deg-viewer.catalog.ra_deg[row]) < 1e-9,
+              'custom object heading explicitly steers and locks camera')
+        check([viewer.preset.itemText(i) for i in range(3)] == ['Orion','Galactic Center','Tau Ceti'],
+              'original heading presets retained')
         viewer.change(rest_mag_limit=-5.)
         settle()
         check(viewer.last_scene.n_visible == 0, 'empty scene renders')
@@ -163,9 +184,22 @@ def main():
         viewer.focus_sky(True)
         settle()
         check(viewer.controls_scroll.isHidden() and viewer.inspector.isHidden(), 'focus mode expands viewport')
+        original_doppler = viewer.last_scene.doppler.copy()
+        ax = viewer.panels[-1]['ax']
+        check(abs(ax.bbox.width/ax.bbox.height-16/9) < 1e-10, 'focused sky axes are 16:9')
+        scale = ax.transData.transform([[0.,0.],[1.,0.],[0.,1.]])
+        check(abs((scale[1,0]-scale[0,0])-(scale[2,1]-scale[0,1])) < 1e-9,
+              'focus keeps equal pixels per degree instead of stretching')
+        viewer.on_scroll(SimpleNamespace(inaxes=ax,step=2))
+        settle()
+        check(abs(viewer.view_state.hfov_deg/viewer.view_state.vfov_deg-16/9) < 1e-12,
+              'focus zoom retains angular aspect ratio')
+        check(np.array_equal(original_doppler,viewer.last_scene.doppler), 'focus and zoom preserve Doppler factors')
         viewer.focus_sky(False)
         settle()
         check(not viewer.controls_scroll.isHidden(), 'focus mode restores controls')
+        check(viewer.view_state.hfov_deg == 45. and viewer.view_state.vfov_deg == 45.,
+              'leaving focus restores previous field of view')
         result = {'status': 'passed', 'checks': checks, 'logical_layouts': layouts,
                   'live_vizier_request': False, 'mode': 'Qt offscreen integration test'}
         with args.output.open('x', encoding='utf-8') as stream:

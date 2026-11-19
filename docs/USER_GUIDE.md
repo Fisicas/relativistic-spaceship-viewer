@@ -40,11 +40,19 @@ they overlap; every selected visible object is still drawn.
 
 ## Inspecting an object
 
+Selecting an object centers its **apparent** direction in the moving view and
+unlocks the camera; the velocity heading and all Doppler factors stay unchanged.
+Selecting it again recenters after panning. The fourth heading choice becomes
+**Custom: [object name]**. Choose that entry to explicitly steer toward its rest
+catalog RA/Dec and lock the camera along the new velocity heading. Orion,
+Galactic Center, and Tau Ceti remain available. Manual RA/Dec entries remain
+independent; they are not mislabeled as the current inspector target.
+
 Click a star or use the catalog-object dropdown. The inspector gives rest and
 apparent directions, angles to the velocity heading, D, and an example wavelength
 shift. It reports the moving-observer values even when selected from the rest
-panel. An object chosen from the dropdown may be outside the FOV or magnitude
-selection; that status is stated explicitly. Distance is a catalog label only.
+panel. A target excluded by the rest V limit stays excluded even after camera
+centering; selection never changes that scientific filter. Distance is a catalog label only.
 Unknown optional values remain unknown; a missing B−V uses 0.65 only for display.
 
 ## Catalogs and saved scenes
@@ -53,9 +61,27 @@ CSV imports ask for ambiguous units and show an acceptance/rejection report.
 Canceling the preview leaves the current catalog intact. **Catalog provenance**
 shows frame/epoch, source identification, and import notes. Hipparcos retrieval
 is optional and runs without blocking the UI; failures keep the previous catalog.
+The client tries the CDS-listed Harvard, IDIA, and main HTTPS servers with
+15-second timeouts per attempt. Provenance records the successful mirror and
+prior errors. No global Astroquery configuration is changed. The mirror used
+does not change the catalog epoch or propagate proper motion.
 If a newer scene is opened while a request is pending, the old result is discarded.
 
 **Save scene** writes a new JSON file and refuses an existing filename. **Open
 scene** loads its embedded catalog and settings without reading the original
 source path. **Export** creates a new versioned folder with figures, arrays, and
 a portable scene. See [EXPORTS.md](EXPORTS.md) for formats and verification.
+
+## Widescreen focus
+
+**Focus sky** hides the panels and sets each sky viewport to 16:9, keeping equal
+pixels per angular degree. The existing projection has independent atan2 axes,
+so horizontal FOV = (16/9) × vertical FOV. At 45° vertical, this is 80° × 45°.
+The Lorentz transform is unchanged; source visibility is recalculated for the
+new angular limits. Objects are not stretched to fill the wider screen.
+
+Vertical FOV is preserved unless the 160° horizontal cap requires reducing it
+to 90°. Zoom keeps the ratio. Leaving focus restores the prior FOV; opening a
+scene or resetting exits focus before applying that scene's settings. Comparison
+uses the same angular limits and camera in both panels, each at 16:9. Exports
+and saved scenes retain the actual horizontal/vertical FOV.

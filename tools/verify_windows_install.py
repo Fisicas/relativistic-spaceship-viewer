@@ -17,6 +17,7 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from spaceship_viewer import deployment as deploy
+from spaceship_viewer import __version__
 
 
 def main():
@@ -78,7 +79,7 @@ def main():
     first=deploy.active_state(root)['active']
     shortcut=work/'Synthetic Start menu/Relativistic Spaceship Viewer.lnk'
     check(shortcut.exists(),'Start menu shortcut creation')
-    check(deploy.verify_folder(deploy.slot_folder(root,first))['version']=='0.2.0','installed files verify against manifest')
+    check(deploy.verify_folder(deploy.slot_folder(root,first))['version']==__version__,'installed files verify against manifest')
     first_pid=launched('launch-first.json')
     duplicate=work/'duplicate.json'
     run([root/'ViewerLauncher.exe','--quiet','--result',duplicate])

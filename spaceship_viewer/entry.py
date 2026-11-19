@@ -14,6 +14,17 @@ def main():
         if sys.stdout:
             print(__version__)
         return 0
+    if '--check-hipparcos' in sys.argv:
+        output=Path(sys.argv[sys.argv.index('--check-hipparcos')+1])
+        try:
+            from .runtime_check import check_live_catalog
+            check_live_catalog(output)
+            return 0
+        except Exception as exc:
+            with output.open('x',encoding='utf-8') as stream:
+                json.dump({'status':'failed','version':__version__,'error':str(exc),
+                           'traceback':traceback.format_exc()},stream,indent=2)
+            return 1
     if '--self-test' in sys.argv:
         position=sys.argv.index('--self-test')
         output=Path(sys.argv[position+1])

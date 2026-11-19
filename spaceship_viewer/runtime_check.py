@@ -8,6 +8,30 @@ import sys
 import tempfile
 
 
+def check_live_catalog(output):
+    """Explicit opt-in diagnostic, separate from the network-blocked self-test."""
+    from dataclasses import asdict
+    import numpy as np
+    from . import __version__
+    from .catalog import fetch_hipparcos
+    from .session import make_document,decode_document
+    from .state import ViewState
+    from .presentation import Presentation
+    catalog=fetch_hipparcos(8.)
+    document=make_document(catalog,ViewState(),Presentation(),'Live Hipparcos diagnostic')
+    reopened,_,_,_=decode_document(json.loads(json.dumps(document,allow_nan=False)))
+    if not np.array_equal(catalog.ra_deg,reopened.ra_deg) or not np.array_equal(catalog.bv,reopened.bv,equal_nan=True):
+        raise AssertionError('Live catalog serialization changed values.')
+    result={'status':'passed','version':__version__,'frozen':bool(getattr(sys,'frozen',False)),
+            'live_network':True,'rows':catalog.n,'received':catalog.import_report.total_rows,
+            'rejected':len(catalog.import_report.rejected),'metadata':asdict(catalog.metadata),
+            'catalog_sha256':document['catalog_sha256'],'json_round_trip':'passed',
+            'scope':'retrieval and serialization; not observational validation'}
+    with Path(output).open('x',encoding='utf-8') as stream:
+        json.dump(result,stream,indent=2)
+    return result
+
+
 def run(output):
     # This entry point runs in a dedicated short-lived process. Fail on any
     # network attempt, including downloads triggered indirectly during imports.
@@ -49,6 +73,18 @@ def run(output):
         viewer.render_timer.stop()
         viewer.refresh()
         check(viewer.last_scene.n_visible==26,'Qt gamma control')
+        old_heading=viewer.view_state.velocity_direction.copy()
+        row=catalog.name.tolist().index('Sirius')
+        viewer.select_row(row)
+        viewer.refresh()
+        check(not viewer.view_state.camera_locked and np.array_equal(old_heading,viewer.view_state.velocity_direction),
+              'inspector centers camera without changing velocity')
+        check(viewer.preset.itemText(3)=='Custom: Sirius','custom heading names inspector target')
+        viewer.focus_sky(True)
+        viewer.refresh()
+        axes=viewer.panels[-1]['ax']
+        check(abs(axes.bbox.width/axes.bbox.height-16/9)<1e-9,'focused viewport is 16:9')
+        viewer.focus_sky(False)
         with tempfile.TemporaryDirectory(prefix='rsv-selftest-') as directory:
             figure=export_scene(directory,'probe',catalog,state,Presentation(), 'Offline installation check',
                                 width=960,height=720,dpi=100)
