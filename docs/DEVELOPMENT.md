@@ -1,6 +1,6 @@
 # Development and reproduction
 
-Version **0.2.5** is an unpublished local release candidate with the physics
+Version **0.2.6** is an unpublished local release candidate with the physics
 foundation, Qt UI, scientific exports, and Windows installation/update support.
 Use the completion report for the actual checks and final asset hashes. The
 version string alone does not indicate a Git tag or published release.

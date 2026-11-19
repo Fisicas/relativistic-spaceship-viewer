@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.6 — unpublished explicit checkbox marks, 2026-11-19
+
+- Draw an actual check mark in all selected Qt checkboxes, including catalog
+  startup, main controls, and Sol controls. Keep unchecked boxes empty.
+- Bundle a scalable SVG check asset and verify that the frozen styled indicator
+  contains the visible mark. Physics, catalog/cache behavior, and controls are unchanged.
+
 ## 0.2.5 — unpublished charcoal cockpit and local catalog library, 2026-11-19
 
 - Use neutral charcoal/gray chrome and plot annotations, preserving scientific

@@ -69,6 +69,16 @@ def run(output):
     viewer=Viewer()
     try:
         check(viewer.last_scene.n_visible==12,'Qt construction')
+        # Check the actual styled indicator, including the frozen SVG loader.
+        box=viewer.lock_check
+        pixmap=box.grab()  # Polish and lay out the hidden widget before locating its indicator.
+        option=W.QStyleOptionButton();box.initStyleOption(option)
+        region=box.style().subElementRect(W.QStyle.SubElement.SE_CheckBoxIndicator,option,box)
+        bitmap=pixmap.toImage();scale=pixmap.devicePixelRatio()
+        shades=[bitmap.pixelColor(x,y).lightness() for y in range(round((region.top()+3)*scale),round((region.bottom()-2)*scale))
+                for x in range(round((region.left()+3)*scale),round((region.right()-2)*scale))]
+        check(sum(v<80 for v in shades)>3 and sum(v>180 for v in shades)>10,
+              'selected checkbox paints a dark check mark on its light indicator')
         viewer.set_gamma(2.)
         viewer.render_timer.stop()
         viewer.refresh()

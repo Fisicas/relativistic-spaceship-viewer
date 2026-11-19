@@ -4,7 +4,7 @@ Explore the instantaneous apparent sky of an observer moving at a significant
 fraction of the speed of light. Aberration changes the directions; the Doppler
 factor changes the frequency. The physics stays visible alongside the view.
 
-**0.2.5 — local release candidate, unpublished.** The Qt interface, reproducible
+**0.2.6 — local release candidate, unpublished.** The Qt interface, reproducible
 exports, Windows installer, and managed updater are implemented. The prepared
 Windows binaries are unsigned; no GitHub release has been published.
 
@@ -79,7 +79,7 @@ remain preserved in `docs/images/` as historical assets.
 ## Run locally
 
 For Windows without Python or Git, run the prepared
-`relativistic-spaceship-viewer-0.2.5-windows-x64-setup.exe`. It installs for the
+`relativistic-spaceship-viewer-0.2.6-windows-x64-setup.exe`. It installs for the
 current user and adds a Start menu shortcut. In a checkout, `Install_Viewer.cmd`
 uses a prepared installer in `dist\release`, or downloads the latest published
 stable installer after verifying its GitHub asset digest. A new online release
@@ -163,5 +163,5 @@ derived color data: CC BY-SA 4.0; see [attribution](spaceship_viewer/data/CIE_AT
 Windows builds include separate dependency
 license texts and an inventory under `licenses`. See the
 [local release checklist](docs/RELEASE_CHECKLIST.md) and
-[release notes](RELEASE_NOTES_v0.2.5.md) for the publication boundary and remaining
+[release notes](RELEASE_NOTES_v0.2.6.md) for the publication boundary and remaining
 clean-machine/live-update checks.

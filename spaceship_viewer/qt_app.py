@@ -56,7 +56,7 @@ QDoubleSpinBox, QSpinBox, QComboBox, QLineEdit { background: #171717; color: #e6
 QDoubleSpinBox:focus, QSpinBox:focus, QLineEdit:focus { border-color: #b0b0b0; }
 QCheckBox { spacing: 7px; padding: 3px 0; font-weight: 400; }
 QCheckBox::indicator { width: 14px; height: 14px; border: 1px solid #6a6a6a; border-radius: 3px; background: #171717; }
-QCheckBox::indicator:checked { background: #c4c4c4; border-color: #c4c4c4; }
+QCheckBox::indicator:checked { background: #c4c4c4; border-color: #c4c4c4; image: url("__CHECKMARK_URL__"); }
 QSlider::groove:horizontal { height: 4px; background: #4a4a4a; border-radius: 2px; }
 QSlider::handle:horizontal { width: 13px; margin: -5px 0; border-radius: 6px; background: #dedede; }
 QScrollArea { border: none; } QScrollBar:vertical { background: #1c1c1c; width: 9px; }
@@ -69,7 +69,7 @@ QPlainTextEdit, QTextBrowser { border: none; background: #1c1c1c; padding: 8px; 
 QStatusBar { background: #171717; color: #a8a8a8; border-top: 1px solid #393939; }
 QMenuBar, QMenu { background: #202020; color: #d8d8d8; } QMenu::item:selected { background: #383838; }
 QToolTip { background: #303030; color: #eeeeee; border: 1px solid #777777; }
-'''
+'''.replace('__CHECKMARK_URL__',(Path(__file__).parent/'assets/checkmark.svg').as_posix())
 
 
 def label(text, kind=None, wrap=False):
