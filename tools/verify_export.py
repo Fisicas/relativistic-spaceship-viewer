@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 from spaceship_viewer.exporting import export_scene
 from spaceship_viewer.scene import compute_scene
 from spaceship_viewer.solar import compute_view
+from spaceship_viewer.solar_radiometry import solar_image
 from spaceship_viewer.session import load_document
 
 
@@ -34,6 +35,11 @@ def verify(path, rerender_parent=None):
                 for field in ('rest_center','rest_limb','limb','limb_doppler','cap_center','central_ray',
                               'rest_radius_rad','radius_rad','solid_angle_sr','central_doppler','doppler_min','doppler_max'):
                     np.testing.assert_allclose(arrays[prefix+'_solar_'+field],solar[field],atol=2e-12,rtol=2e-12)
+                if presentation.solar.radiometry_enabled:
+                    image=solar_image(panel_state,solar,presentation.solar)
+                    if image is not None:
+                        for field in ('x_deg','y_deg','inside','doppler','xyz_w_m2_sr','rgb'):
+                            np.testing.assert_allclose(arrays[prefix+'_solar_image_'+field],image[field],atol=2e-12,rtol=2e-12)
     result = {'status': 'passed', 'scene': str(path), 'catalog_sha256': document['catalog_sha256'],
               'scope': 'artifact hashes and scientific arrays; calibrated radiometry is not validated'}
     if rerender_parent:

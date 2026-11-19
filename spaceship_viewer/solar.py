@@ -2,7 +2,7 @@
 
 IAU nominal radius (2015 B3): 6.957e8 m; AU (2012 B2): 149597870700 m.
 The editable direction is a teaching reference in the catalog rest-frame axes,
-not an ephemeris. Disk geometry and ray occultation are modeled, not radiometry.
+not an ephemeris. Radiometry settings never enter the geometric transformation.
 """
 from dataclasses import dataclass, replace
 import math
@@ -25,6 +25,11 @@ class SolarSettings:
     observer_distance_m: float = AU_M
     nominal_radius_m: float = SOLAR_RADIUS_M
     model: str = 'fixed-1au-static-photosphere/1'
+    radiometry_enabled: bool = True
+    exposure_ev: float = 0.
+    show_outline: bool = True
+    rest_temperature_k: float = 5772.
+    radiometry_model: str = 'planck-cie1931-srgb/1'
 
     def __post_init__(self):
         object.__setattr__(self, 'ra_deg', finite_scalar(self.ra_deg,'solar RA') % 360.)
@@ -34,6 +39,11 @@ class SolarSettings:
             raise ValueError('Solar visibility/tracking settings must be boolean.')
         if self.observer_distance_m!=AU_M or self.nominal_radius_m!=SOLAR_RADIUS_M or self.model!='fixed-1au-static-photosphere/1':
             raise ValueError('Unsupported solar geometry constants or model version.')
+        if type(self.radiometry_enabled) is not bool or type(self.show_outline) is not bool:
+            raise ValueError('Solar rendering switches must be boolean.')
+        object.__setattr__(self,'exposure_ev',finite_scalar(self.exposure_ev,'solar exposure EV'))
+        if not -40.<=self.exposure_ev<=80. or self.rest_temperature_k!=5772. or self.radiometry_model!='planck-cie1931-srgb/1':
+            raise ValueError('Unsupported solar radiometry settings or model version.')
 
     @property
     def direction(self):
@@ -47,10 +57,11 @@ def solar_reference(settings):
         CatalogMetadata(source='Analytic Sol model: IAU nominal radius, fixed 1 AU observer event',
             coordinate_frame='User-defined direction in the catalog rest-frame equatorial axes',
             coordinate_epoch='Fixed teaching setup; no ephemeris or proper motion',
-            magnitude_system='Solar photometry is not modeled',
+            magnitude_system='Ideal 5772 K blackbody radiance; no measured solar V magnitude',
             notes=('Nominal solar radius 695700000 m; observer distance 149597870700 m (1 AU).',
                    'RA/Dec default to 0/0 degrees and are editable independently of velocity.',
-                   'Neutral disk fill represents geometry; no limb darkening, spectrum, or radiometry.')))
+                   'Uniform ideal blackbody; per-ray Doppler spectrum; no limb darkening or solar absorption lines.',
+                   'CIE 1931 2-degree observer (CIE 2019), DOI 10.25039/CIE.DS.xvudnb9b; CC BY-SA 4.0.')))
 
 
 def rest_limb(settings, samples=LIMB_SAMPLES):

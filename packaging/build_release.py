@@ -39,6 +39,7 @@ def runtime_distributions():
 def write_notices(folder):
     folder.mkdir()
     shutil.copy2(ROOT/'LICENSE',folder/'PROJECT_LICENSE.txt')
+    shutil.copytree(ROOT/'spaceship_viewer/data',folder/'cie1931')
     inventory=[]
     for key,dist in sorted(runtime_distributions().items()):
         sub=folder/key
@@ -59,6 +60,8 @@ def write_notices(folder):
         inventory.append(record)
     (folder/'dependency_inventory.json').write_text(json.dumps(inventory,indent=2),encoding='utf-8')
     (folder/'THIRD_PARTY_NOTICES.txt').write_text('''Relativistic Spaceship Viewer is MIT licensed.
+Bundled CIE 1931 observer data are CC BY-SA 4.0; see cie1931 for attribution,
+original metadata, and license. This is separate from the MIT code license.
 Bundled Python, NumPy, Matplotlib, PySide6/Qt, Astropy/astroquery and other
 dependencies retain their own licenses. Package notices and license texts are
 included in the sibling directories. CPython license text is supplied with the
@@ -170,7 +173,8 @@ def main():
                    '--hidden-import','matplotlib.backends.backend_svg',
                    '--hidden-import','matplotlib.backends.backend_pdf',
                    '--exclude-module','astroquery.vizier.tests',
-                   '--add-data',str(notices)+os.pathsep+'licenses']
+                   '--add-data',str(notices)+os.pathsep+'licenses',
+                   '--add-data',str(ROOT/'spaceship_viewer/data')+os.pathsep+'spaceship_viewer/data']
     # Real .py bytes accompany the frozen .pyz so export provenance hashes and
     # inspectable source remain available without relying on a developer checkout.
     for file in (ROOT/'spaceship_viewer').glob('*.py'):

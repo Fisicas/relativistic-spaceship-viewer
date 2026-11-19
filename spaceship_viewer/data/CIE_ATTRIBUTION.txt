@@ -1,0 +1,12 @@
+CIE 1931 standard colorimetric observer, 2 degree, 1 nm (360-830 nm).
+CIE 2019. International Commission on Illumination, Vienna, AT.
+DOI: https://doi.org/10.25039/CIE.DS.xvudnb9b
+Data page: https://cie.co.at/datatable/cie-1931-colour-matching-functions-2-degree-observer
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+https://creativecommons.org/licenses/by-sa/4.0/
+The CSV and metadata are redistributed unmodified. The data license is separate
+from the project's MIT code license. Derived lookup tables and color results
+use Planck integration, interpolation, and sRGB tone/gamut mapping; those derived
+data are distributed under CC BY-SA 4.0 with attribution to CIE. No CIE endorsement
+is implied. See the bundled license HTML and metadata. No warranties are supplied.
+CSV SHA-256: fa663e3535a7e0763a745993a1f0a192eb0275ac46ad2d1befd7626841e713c1

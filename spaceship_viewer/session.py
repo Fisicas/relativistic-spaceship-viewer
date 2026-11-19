@@ -65,7 +65,11 @@ def decode_document(document):
     state = ViewState(**view)
     appearance = dict(document['presentation'])
     if appearance.get('solar') is not None:
-        appearance['solar'] = SolarSettings(**appearance['solar'])
+        settings=dict(appearance['solar'])
+        if 'radiometry_model' not in settings:
+            # Preserve the neutral fill of 0.2.3 scenes until explicitly enabled.
+            settings.setdefault('radiometry_enabled',False)
+        appearance['solar'] = SolarSettings(**settings)
     if appearance.get('reference_target') is not None:
         appearance['reference_target'] = ReferenceTarget.from_dict(appearance['reference_target'])
     presentation = Presentation(**appearance)

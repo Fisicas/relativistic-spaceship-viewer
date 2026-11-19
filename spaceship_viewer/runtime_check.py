@@ -119,6 +119,11 @@ def run(output):
                              'Solar installation check',width=960,height=720,dpi=100)
             _,_,solar_appearance,_=load_document(sun/'scene.json')
             check(solar_appearance.solar.observer_distance_m==149597870700.,'solar geometry survives export round trip')
+            from .solar_radiometry import cie_table,xyz_direct,rest_y
+            check(cie_table().shape==(471,4),'bundled CIE data checksum and dimensions')
+            check(float(xyz_direct(.22941573387056174)[1])/rest_y()<.001,'redshifted visible surface radiance dims at fixed exposure')
+            with np.load(sun/'scene_data.npz',allow_pickle=False) as arrays:
+                check(arrays['moving_solar_image_rgb'].shape==(257,257,3), 'Doppler solar texture and numeric radiance export')
             from dataclasses import replace
             from .geometry import CameraPose
             viewer.view_state=replace(viewer.view_state,beta=.99999,camera_locked=False,

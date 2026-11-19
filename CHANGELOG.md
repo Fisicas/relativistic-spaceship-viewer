@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.4 — unpublished Doppler solar radiometry, 2026-11-19
+
+- Add per-ray uniform 5772 K blackbody spectra and CIE visible surface radiance
+  while preserving the finite solar silhouette and occultation geometry.
+- Add fixed display exposure, a one-time exposure fit, and an optional geometry
+  outline. Keep these separate from physical radiance, camera, and FOV.
+- Bundle checksummed original CIE data, attribution, and CC BY-SA 4.0 license;
+  extend numeric exports and provenance to spectral and display results.
+- Preserve neutral fill and provenance when loading 0.2.3 solar scenes. Keep
+  the 33 named targets plus Sol. Add scrolling for compact solar controls.
+- Add spectral/bolometric identities, per-ray gradients, LUT accuracy, geometry
+  invariance, saved-scene, Qt, frozen, and export checks. No publication.
+
 ## 0.2.3 — unpublished fixed-1-AU Sol model, 2026-11-19
 
 - Add Sol after the original 33 targets, with editable teaching direction,

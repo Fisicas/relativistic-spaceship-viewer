@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib.transforms import Bbox
 from matplotlib.font_manager import FontProperties
 from matplotlib.patches import Polygon
+from matplotlib.path import Path
 from .scene import compute_scene
 from .relativity import lorentz_factor
 from .relativity import aberrate
@@ -20,7 +21,7 @@ MUTED = '#7e93ad'
 ACCENT = '#6dd8ed'
 
 
-def draw_solar_disk(ax,state,geometry,labels):
+def draw_solar_disk(ax,state,geometry,labels,settings):
     """Neutral silhouette: exact sampled limb, implicit-cap fallback at horizon.
 
     The fallback samples the displayed angular map on a 401×401 grid when the
@@ -28,9 +29,12 @@ def draw_solar_disk(ax,state,geometry,labels):
     """
     limb=geometry['limb']
     x,y,_=project_directions(limb,state.camera,state.hfov_deg,state.vfov_deg)
+    edge='#f4bd60' if settings.show_outline else 'none'
+    clip=None
     if np.all(limb@state.camera.forward>0) and geometry['radius_rad']<np.pi/2:
-        ax.add_patch(Polygon(np.column_stack((x,y)),closed=True,facecolor='#fff1c9',
-                             edgecolor='#f4bd60',linewidth=.9,zorder=4))
+        clip=Polygon(np.column_stack((x,y)),closed=True,facecolor='black' if settings.radiometry_enabled else '#fff1c9',
+                     edgecolor=edge,linewidth=.9,zorder=4)
+        ax.add_patch(clip)
     else:
         gx=np.linspace(-state.hfov_deg/2,state.hfov_deg/2,401)
         gy=np.linspace(-state.vfov_deg/2,state.vfov_deg/2,401)
@@ -39,10 +43,25 @@ def draw_solar_disk(ax,state,geometry,labels):
         score=(center@state.camera.forward-xx*(center@state.camera.east)+yy*(center@state.camera.north))/np.sqrt(1+xx*xx+yy*yy)
         inside=score>=np.cos(geometry['radius_rad'])
         if inside.all():
-            ax.axhspan(-state.vfov_deg/2,state.vfov_deg/2,color='#fff1c9',zorder=4)
+            clip=ax.axhspan(-state.vfov_deg/2,state.vfov_deg/2,color='black' if settings.radiometry_enabled else '#fff1c9',zorder=4)
         elif inside.any():
-            ax.contourf(gx,gy,inside.astype(float),levels=[.5,1.5],colors=['#fff1c9'],zorder=4)
-            ax.contour(gx,gy,score,levels=[np.cos(geometry['radius_rad'])],colors=['#f4bd60'],linewidths=.9,zorder=4)
+            region=ax.contourf(gx,gy,inside.astype(float),levels=[.5,1.5],colors=['black' if settings.radiometry_enabled else '#fff1c9'],zorder=4)
+            clip=Path.make_compound_path(*region.get_paths())
+            if settings.show_outline:
+                ax.contour(gx,gy,score,levels=[np.cos(geometry['radius_rad'])],colors=[edge],linewidths=.9,zorder=4.2)
+    if settings.radiometry_enabled and clip is not None:
+        from .solar_radiometry import solar_image
+        raster=solar_image(state,geometry,settings)
+        if raster is not None:
+            gx,gy=raster['x_deg'],raster['y_deg']
+            texture=ax.imshow(raster['rgb'],origin='lower',extent=(gx[0],gx[-1],gy[0],gy[-1]),
+                              interpolation='bilinear',aspect='equal',zorder=4.1)
+            if isinstance(clip,Path):
+                texture.set_clip_path(clip,ax.transData)
+            else:
+                texture.set_clip_path(clip)
+            if isinstance(clip,Polygon) and settings.show_outline:
+                ax.add_patch(Polygon(clip.get_xy(),closed=True,facecolor='none',edgecolor=edge,linewidth=.9,zorder=4.2))
     cx,cy,visible=project_directions(geometry['central_ray'][None,:],state.camera,state.hfov_deg,state.vfov_deg)
     if visible[0]:
         ax.plot(cx,cy,marker='+',markersize=8,color='#bf8733',linestyle='none',zorder=6)
@@ -74,7 +93,7 @@ def draw_view(ax, scene, state, presentation, original_rows, selected=None, sola
         ax.scatter(x, y, s=np.clip(areas * 2., 1, 500), c=scene.rgb, alpha=.13, linewidths=0, zorder=2)
     points = ax.scatter(x, y, s=areas, c=scene.rgb, alpha=.97, linewidths=0, zorder=3)
     if solar is not None:
-        draw_solar_disk(ax,state,solar,state.labels)
+        draw_solar_disk(ax,state,solar,state.labels,presentation.solar)
     if presentation.reference_target is not None and presentation.reference_target.object_kind!='solar_disk':
         target = presentation.reference_target
         apparent, _, _ = aberrate(target.as_catalog().vectors, state.velocity_direction, state.beta)

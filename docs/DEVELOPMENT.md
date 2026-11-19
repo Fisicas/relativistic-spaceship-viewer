@@ -1,6 +1,6 @@
 # Development and reproduction
 
-Version **0.2.3** is an unpublished local release candidate with the physics
+Version **0.2.4** is an unpublished local release candidate with the physics
 foundation, Qt UI, scientific exports, and Windows installation/update support.
 Use the completion report for the actual checks and final asset hashes. The
 version string alone does not indicate a Git tag or published release.
@@ -14,6 +14,9 @@ The validated `geometry`, `relativity`, `state`, `catalog`, `demo_catalog`,
 is the new shared Qt/export presentation. `presentation.py` records presentation
 settings; `inspection.py` calculates object readouts; `session.py` handles portable
 JSON scenes; `exporting.py` creates versioned figure bundles.
+`solar.py` owns the fixed-1-AU finite geometry. `solar_radiometry.py` independently
+integrates per-ray Planck spectra with bundled CIE data and maps them to display
+RGB. Geometry never depends on exposure. See [radiometry](SOLAR_RADIOMETRY.md).
 `entry.py` is shared by source, wheel, and frozen entry points; `runtime_check.py`
 performs the short offline activation check. `deployment.py` uses only the
 standard library for stable-release discovery, archive integrity, version slots,
@@ -48,6 +51,8 @@ PySide6 6.11.2, Pillow 12.3.0, Tk 8.6, Windows 11. Do not upgrade the shared
 environment to install this project. On other machines use a separate project
 environment and resolve the declared dependencies there. Only this runtime was
 verified; minimum dependency bounds are not a cross-version test claim.
+The Matplotlib floor is 3.8 because horizon textures use ContourSet path access.
+No installed shared-environment dependency was upgraded for this change.
 
 Numerical baseline comparisons use absolute/relative tolerance 2e-12. Inverse
 tests at |beta|=0.999999 allow 3e-9 absolute error because of conditioning. The

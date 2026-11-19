@@ -22,6 +22,7 @@ from .geometry import CameraPose,unit_to_radec
 from .inspection import inspect_object
 from .navigation import center_object, widescreen_fov, WIDESCREEN_RATIO,MIN_FOV
 from .solar import SolarSettings,solar_reference,solar_geometry,AU_M,SOLAR_RADIUS_M,REST_RADIUS_RAD
+from .solar_radiometry import summary as solar_radiance_summary, fitted_exposure, MIN_EV, MAX_EV
 from .plotting import draw_figure, BACKGROUND
 from .presentation import Presentation
 from .relativity import MAX_BETA, lorentz_factor, rest_frame_half_angle
@@ -333,9 +334,11 @@ class Viewer(W.QMainWindow):
         self.object_details = W.QTextBrowser()
         self.object_details.setOpenExternalLinks(False)
         inspect_layout.addWidget(self.object_details, 1)
-        self.solar_group=W.QGroupBox('SOL · FIXED 1 AU TEACHING SETUP')
+        self.solar_group=W.QGroupBox('SOL · FIXED 1 AU MODEL')
         solar_layout=W.QVBoxLayout(self.solar_group)
+        solar_layout.setContentsMargins(4,8,4,4)
         solar_form=W.QFormLayout()
+        solar_form.setRowWrapPolicy(W.QFormLayout.RowWrapPolicy.WrapAllRows)
         self.solar_ra_spin,self.solar_dec_spin=spin(0.,359.999999,0.,6),spin(-90.,90.,0.,6)
         solar_form.addRow('Sun RA (°)',self.solar_ra_spin)
         solar_form.addRow('Sun Dec (°)',self.solar_dec_spin)
@@ -345,18 +348,40 @@ class Viewer(W.QMainWindow):
         self.solar_show_check.setToolTip('Show the photosphere and occult distant background rays behind it.')
         self.solar_show_check.toggled.connect(lambda v:self.update_solar(enabled=v))
         solar_layout.addWidget(self.solar_show_check)
-        self.solar_track_check=W.QCheckBox('Track Sol as boost changes')
+        self.solar_track_check=W.QCheckBox('Track Sol during boost')
         self.solar_track_check.toggled.connect(lambda v:self.update_solar(track_center=v))
         solar_layout.addWidget(self.solar_track_check)
         solar_layout.addWidget(self.button('Frame solar disk',self.frame_solar_disk))
         quick=W.QHBoxLayout()
+        quick.setSpacing(3)
         for text,mode in (('Toward','toward'),('Away','away'),('90°','transverse')):
             button=self.button(text,lambda checked=False,m=mode:self.solar_heading(m))
             button.setToolTip('Set velocity heading relative to Sol; keep the disk centered.')
             quick.addWidget(button)
         solar_layout.addLayout(quick)
-        inspect_layout.addWidget(self.solar_group)
-        self.solar_group.hide()
+        self.solar_radiometry_check=W.QCheckBox('Doppler spectrum')
+        self.solar_radiometry_check.setToolTip('Uniform 5772 K blackbody, shifted independently for each ray. No limb darkening.')
+        self.solar_radiometry_check.toggled.connect(lambda v:self.update_solar(radiometry_enabled=v))
+        solar_layout.addWidget(self.solar_radiometry_check)
+        self.solar_exposure_spin=spin(MIN_EV,MAX_EV,0.,2)
+        self.solar_exposure_spin.setSuffix(' EV')
+        self.solar_exposure_spin.setToolTip('Fixed display exposure; +1 EV doubles linear exposure. Does not alter physical radiance or angular size.')
+        self.solar_exposure_spin.valueChanged.connect(lambda v:self.update_solar(exposure_ev=v))
+        exposure_form=W.QFormLayout()
+        exposure_form.setRowWrapPolicy(W.QFormLayout.RowWrapPolicy.WrapAllRows)
+        exposure_form.addRow('Display exposure',self.solar_exposure_spin)
+        solar_layout.addLayout(exposure_form)
+        solar_layout.addWidget(self.button('Fit exposure once',self.fit_solar_exposure))
+        self.solar_outline_check=W.QCheckBox('Outline (annotation)')
+        self.solar_outline_check.toggled.connect(lambda v:self.update_solar(show_outline=v))
+        solar_layout.addWidget(self.solar_outline_check)
+        self.solar_scroll=W.QScrollArea()
+        self.solar_scroll.setWidgetResizable(True)
+        self.solar_scroll.setMinimumHeight(120)
+        self.solar_scroll.setMaximumHeight(300)
+        self.solar_scroll.setWidget(self.solar_group)
+        inspect_layout.addWidget(self.solar_scroll)
+        self.solar_scroll.hide()
         inspect_layout.addWidget(label('Selecting centers the camera. Heading actions steer the velocity. The rest-magnitude cut applies to catalog stars.', 'muted', True))
         self.inspector.addTab(inspect_page, 'Object')
         self.physics_page = W.QTextBrowser()
@@ -502,15 +527,18 @@ class Viewer(W.QMainWindow):
                 widget.setChecked(value)
         with QtCore.QSignalBlocker(self.object_combo):
             target = self._current_named_target()
-            index = next((i for i, item in enumerate(self.named_references) if item == target), -1) if target else -1
+            index = (33 if target.object_kind=='solar_disk' else
+                     next((i for i, item in enumerate(self.named_references) if item == target), -1)) if target else -1
             self.object_combo.setCurrentIndex(index)
-        for widget,value in ((self.solar_ra_spin,solar.ra_deg),(self.solar_dec_spin,solar.dec_deg)):
+        for widget,value in ((self.solar_ra_spin,solar.ra_deg),(self.solar_dec_spin,solar.dec_deg),
+                             (self.solar_exposure_spin,solar.exposure_ev)):
             with QtCore.QSignalBlocker(widget):
                 widget.setValue(value)
-        for widget,value in ((self.solar_show_check,solar.enabled),(self.solar_track_check,solar.track_center)):
+        for widget,value in ((self.solar_show_check,solar.enabled),(self.solar_track_check,solar.track_center),
+                             (self.solar_radiometry_check,solar.radiometry_enabled),(self.solar_outline_check,solar.show_outline)):
             with QtCore.QSignalBlocker(widget):
                 widget.setChecked(value)
-        self.solar_group.setVisible(p.reference_target is not None and p.reference_target.object_kind=='solar_disk')
+        self.solar_scroll.setVisible(p.reference_target is not None and p.reference_target.object_kind=='solar_disk')
 
     def refresh(self):
         started = time.perf_counter()
@@ -534,7 +562,8 @@ class Viewer(W.QMainWindow):
         if self._focus_fov_before is not None:
             note += f'16:9 angular viewport · FOV {self.view_state.hfov_deg:g}° × {self.view_state.vfov_deg:g}°. '
         if self.presentation.solar is not None and self.presentation.solar.enabled:
-            note += 'Sol: fixed 1 AU silhouette; distant catalog rays behind the photosphere are occulted. '
+            note += ('Sol: fixed 1 AU; uniform 5772 K blackbody, per-ray Doppler radiance, fixed display exposure. '
+                     if self.presentation.solar.radiometry_enabled else 'Sol: fixed 1 AU neutral geometry fill. ')
         self.scene_note.setText(note + 'Illustrative RGB / marker brightness; no travel or calibrated photometry.')
         self.source_text.setText(f'{self.catalog.n:,} objects · {self.catalog.metadata.coordinate_epoch}\nCompleteness unknown')
         self._update_inspector()
@@ -607,8 +636,14 @@ class Viewer(W.QMainWindow):
         if target is not None and target.object_kind=='solar_disk':
             target=solar_reference(settings)
         self.presentation=replace(self.presentation,solar=settings,reference_target=target)
-        self._track_solar()
+        if 'ra_deg' in changes or 'dec_deg' in changes or changes.get('track_center') is True:
+            self._track_solar()
         self._schedule()
+
+    def fit_solar_exposure(self):
+        settings=self.presentation.solar or SolarSettings()
+        geometry=solar_geometry(settings,self.view_state)
+        self.update_solar(exposure_ev=fitted_exposure(geometry['doppler_max']))
 
     def apply_solar_direction(self):
         self.update_solar(ra_deg=self.solar_ra_spin.value(),dec_deg=self.solar_dec_spin.value())
@@ -634,6 +669,7 @@ class Viewer(W.QMainWindow):
         settings=self.presentation.solar
         geometry=solar_geometry(settings,self.view_state)
         ra,dec=unit_to_radec(geometry['central_ray'])
+        radiance=solar_radiance_summary(geometry,settings)
         cra,cdec=unit_to_radec(geometry['cap_center'])
         self.object_name.setText('Sol · our Sun')
         radius=math.degrees(geometry['radius_rad'])
@@ -647,7 +683,10 @@ class Viewer(W.QMainWindow):
 <p>550 nm example → {550/geometry['central_doppler']:.7g} nm<br>Example wavelength, not a measured solar line.</p>
 <p><b>Rest center</b><br>RA {settings.ra_deg:.6f}° · Dec {settings.dec_deg:.6f}°</p>
 <p><b>Apparent central ray</b><br>RA {ra:.6f}° · Dec {dec:.6f}°<br><b>Apparent limb-circle center</b><br>RA {cra:.6f}° · Dec {cdec:.6f}°</p>
-{limit}<p>Neutral fill shows angular geometry. Solar colors, radiance, limb darkening, and spectra are not modeled. The point-star RGB and D³ marker controls do not resize or brighten this disk.</p>
+{limit}<p><b>Ideal blackbody radiance</b><br>Rest temperature: 5772 K<br>Central shifted temperature: {radiance['shifted_temperature_k']:.7g} K<br>Central bolometric surface radiance ratio (D⁴): {radiance['central_bolometric_radiance_ratio']:.7g}<br>Central visible Y ratio: {radiance['central_visible_y_ratio']:.7g}<br>Central model luminance: {radiance['central_luminance_cd_m2']:.7g} cd/m²</p>
+<p>Per-ray spectrum Bλ(D × 5772 K); CIE 1931 2° observer. Uniform blackbody approximation; no absorption lines or limb darkening. These are surface-radiance values, not disk-integrated flux.</p>
+<p>Display: {'fixed-exposure Doppler rendering' if settings.radiometry_enabled else 'legacy neutral geometry fill'}; {settings.exposure_ev:+.2f} EV. Tone mapping and sRGB gamut compression limit display brightness and color. Fit exposure is a one-time adjustment; subsequent speed changes retain it. Extremely redshifted visible light may remain black even at maximum exposure.</p>
+<p>Exposure never resizes the physical disk. The optional outline and center cross are geometry annotations. Point-star RGB and D³ marker controls do not affect Sol.</p>
 <p>Fixed teaching direction, not a dated ephemeris. Speed changes the instantaneous boost at the same 1 AU event; no trajectory, orbit, or changing distance is calculated.</p>''')
 
     def _update_inspector(self):

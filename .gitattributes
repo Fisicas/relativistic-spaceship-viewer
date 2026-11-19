@@ -5,3 +5,6 @@
 # Matplotlib emits trailing path-coordinate separators in generated SVGs.
 # Preserve its output rather than editing a recorded scientific artifact.
 docs/images/**/*.svg -whitespace
+
+# Preserve official third-party data and license bytes unmodified.
+spaceship_viewer/data/** -whitespace

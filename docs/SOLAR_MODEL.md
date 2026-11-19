@@ -60,11 +60,12 @@ Nearby foreground objects are not modeled; catalog distance labels do not
 provide a finite-distance ray tracing model. Named reference crosses remain
 navigation annotations, not detected sources.
 
-Neutral fill shows geometry. Solar spectrum, RGB appearance, surface radiance,
-limb darkening, corona, atmospheric effects, and general-relativistic deflection
-are not modeled. The illustrative RGB/D^3 point-star controls do not change the
-Sun's disk size or fill. There is no measured solar photometry in the target;
-its saved magnitude is null, not a fabricated V magnitude.
+Sol's color and surface brightness now use a uniform ideal 5772 K blackbody
+shifted per ray. See [radiometry and display mapping](SOLAR_RADIOMETRY.md).
+The geometry in this document is unchanged by exposure or rendering switches.
+Limb darkening, corona, atmospheric effects, and GR deflection are not modeled.
+The illustrative RGB/D^3 point-star controls do not affect Sol. The saved
+target magnitude remains null, not a fabricated measured V magnitude.
 
 ## Controls and reproducibility
 

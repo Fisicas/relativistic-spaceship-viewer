@@ -273,6 +273,34 @@ def main():
         viewer.frame_solar_disk()
         settle()
         check('half the sky' in viewer.object_details.toPlainText(), 'large solar cap is rendered and clearly labeled')
+        viewer.set_beta(.9)
+        viewer.solar_heading('away')
+        viewer.frame_solar_disk()
+        settle()
+        check(viewer.solar_radiometry_check.isChecked(),'Sol starts with Doppler spectrum enabled')
+        from spaceship_viewer.geometry import CameraPose
+        viewer.view_state=replace(viewer.view_state,camera=CameraPose.from_radec(5.,1.),camera_locked=False)
+        before=viewer.view_state
+        viewer.solar_exposure_spin.setValue(3.)
+        settle()
+        check(viewer.view_state==before,'exposure does not recenter a panned camera or change FOV/heading')
+        viewer.fit_solar_exposure()
+        settle()
+        check(viewer.presentation.solar.exposure_ev>3. and viewer.view_state==before,'manual fit brightens redshifted Sol without changing geometry')
+        viewer.solar_radiometry_check.setChecked(False)
+        settle()
+        check(not viewer.presentation.solar.radiometry_enabled and viewer.view_state==before,'legacy geometry fill does not alter camera')
+        viewer.solar_radiometry_check.setChecked(True)
+        viewer.resize(1060,700)
+        viewer.inspector.show()
+        viewer.show()
+        app.processEvents()
+        settle()
+        viewer.solar_scroll.ensureWidgetVisible(viewer.solar_outline_check)
+        app.processEvents()
+        check(viewer.solar_scroll.viewport().rect().contains(viewer.solar_outline_check.mapTo(viewer.solar_scroll.viewport(),viewer.solar_outline_check.rect().center())),
+              'solar controls remain reachable by scrolling at 1060x700')
+        check(viewer.solar_scroll.horizontalScrollBar().maximum()==0,'solar controls fit inspector width without horizontal scrolling')
         result = {'status': 'passed', 'checks': checks, 'logical_layouts': layouts,
                   'live_vizier_request': False, 'mode': 'Qt offscreen integration test'}
         with args.output.open('x', encoding='utf-8') as stream:

@@ -19,7 +19,10 @@ class Presentation:
         if self.solar is not None and not isinstance(self.solar,SolarSettings):
             raise ValueError('Invalid solar settings.')
         if isinstance(self.reference_target,ReferenceTarget) and self.reference_target.object_kind=='solar_disk':
-            if self.solar is None or self.reference_target != solar_reference(self.solar):
+            # Metadata is saved provenance, including legacy neutral-disk notes.
+            # Validate intrinsic target geometry, not wording from another version.
+            fields=('name','ra_deg','dec_deg','vmag','bv','distance_pc','object_kind')
+            if self.solar is None or any(getattr(self.reference_target,key)!=getattr(solar_reference(self.solar),key) for key in fields):
                 raise ValueError('Solar reference must match its saved model geometry.')
         if self.reference_target is not None:
             if not isinstance(self.reference_target, ReferenceTarget) or self.selected_row is not None:

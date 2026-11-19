@@ -4,7 +4,7 @@ Explore the instantaneous apparent sky of an observer moving at a significant
 fraction of the speed of light. Aberration changes the directions; the Doppler
 factor changes the frequency. The physics stays visible alongside the view.
 
-**0.2.3 — local release candidate, unpublished.** The Qt interface, reproducible
+**0.2.4 — local release candidate, unpublished.** The Qt interface, reproducible
 exports, Windows installer, and managed updater are implemented. The prepared
 Windows binaries are unsigned; no GitHub release has been published.
 
@@ -28,7 +28,16 @@ Windows binaries are unsigned; no GitHub release has been published.
   with the full Hipparcos sky loaded. Individual catalog sources remain clickable.
 - Select **Sol → Frame solar disk** to explore a finite Sun at a fixed 1 AU
   event. Edit its teaching direction, use toward/away/transverse headings, and
-  inspect angular size, solid angle, and Doppler factors. See [solar model](docs/SOLAR_MODEL.md).
+  inspect angular size, solid angle, and Doppler factors. Sol's per-ray spectrum
+  and surface brightness follow a uniform 5772 K blackbody. Display exposure is
+  fixed; **Fit exposure once** can reveal very dim redshifted cases without
+  changing angular size. See [geometry](docs/SOLAR_MODEL.md) and
+  [spectrum, radiance, and display mapping](docs/SOLAR_RADIOMETRY.md).
+
+![Sol at the same 4-degree field with different boosts and exposures](docs/images/v024/sol_comparison.png)
+
+The outlines are annotations. CIE-derived colors: CIE 2019, CC BY-SA 4.0;
+attribution and model details are in the radiometry document.
 - **Focus sky** provides a 16:9 angular viewport with equal angular scales;
   visibility is recomputed, and leaving focus restores the previous FOV.
 - Import an explicitly labeled CSV catalog or optionally fetch Hipparcos.
@@ -60,7 +69,7 @@ remain preserved in `docs/images/` as historical assets.
 ## Run locally
 
 For Windows without Python or Git, run the prepared
-`relativistic-spaceship-viewer-0.2.3-windows-x64-setup.exe`. It installs for the
+`relativistic-spaceship-viewer-0.2.4-windows-x64-setup.exe`. It installs for the
 current user and adds a Start menu shortcut. In a checkout, `Install_Viewer.cmd`
 uses a prepared installer in `dist\release`, or downloads the latest published
 stable installer after verifying its GitHub asset digest. A new online release
@@ -139,8 +148,10 @@ or calibrated radiometry. See [development instructions](docs/DEVELOPMENT.md).
 - [F. J. Ballesteros, *New insights into black bodies* (2012)](https://arxiv.org/abs/1201.1809): approximate B−V temperature relation.
 - [ESA Hipparcos catalog, section 2.1](https://cdsarc.cds.unistra.fr/ftp/pub/aliases/H/HIP_1_/version_cd/docs/vol1/sect2_01.pdf): ICRS coordinates at J1991.25 and parallax fields.
 
-MIT License. See [LICENSE](LICENSE). Windows builds include separate dependency
+Code: MIT License. See [LICENSE](LICENSE). Bundled CIE 1931 observer data and
+derived color data: CC BY-SA 4.0; see [attribution](spaceship_viewer/data/CIE_ATTRIBUTION.txt).
+Windows builds include separate dependency
 license texts and an inventory under `licenses`. See the
 [local release checklist](docs/RELEASE_CHECKLIST.md) and
-[release notes](RELEASE_NOTES_v0.2.3.md) for the publication boundary and remaining
+[release notes](RELEASE_NOTES_v0.2.4.md) for the publication boundary and remaining
 clean-machine/live-update checks.
