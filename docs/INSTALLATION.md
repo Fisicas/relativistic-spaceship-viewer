@@ -2,13 +2,19 @@
 
 ## Local prepared release
 
-Run the prepared `relativistic-spaceship-viewer-0.2.3-windows-x64-setup.exe`.
+Run the prepared `relativistic-spaceship-viewer-0.2.6-windows-x64-setup.exe`.
 It installs for the current Windows user; administrator rights, Python, and Git
 are not required. The default location is:
 
 ```text
 %LOCALAPPDATA%\Programs\RelativisticSpaceshipViewer
 ```
+
+Keep this default or another short per-user path. Deeply nested custom install
+or extraction folders can exceed Windows native-extension path limits and make
+PDF/fontTools loading fail. A failed staged self-test leaves the current version
+active. This is a path-length limitation; changing system-wide policies is not
+required or performed by the installer.
 
 A Start menu shortcut points to the stable `ViewerLauncher.exe`. The launcher
 selects the active version, rather than linking a shortcut to a temporary build
@@ -23,6 +29,13 @@ or GitHub's asset SHA-256 digest before running it. It does not pull `main` or
 install dependencies into a shared Python environment. PowerShell execution
 policy is respected; if that prevents the script, run the prepared setup EXE.
 Before a release is published, the online bootstrap has no new release to fetch.
+
+Pushing source commits to GitHub does not distribute an application update.
+The repository owner must publish a stable **v0.2.6** release with the exact
+setup and Windows ZIP assets. For later updates, use a higher version and a
+matching stable tag/asset name. A release marked draft or prerelease is not
+offered by this updater. CI checks source pushes and can build downloadable
+workflow artifacts on manual dispatch; it does not publish GitHub releases.
 
 ## Updates
 

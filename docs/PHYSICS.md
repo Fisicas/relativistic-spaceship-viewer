@@ -19,7 +19,8 @@ not validate the stellar catalog, photometry, RGB appearance, or a finite voyage
   is calculated. Neither stellar nor observer acceleration is modeled.
 - RA and declination are equatorial angles in **degrees** internally. RA is
   reduced modulo 360 degrees, with imported wrap counts reported; declination is
-  validated in [-90, 90] degrees. Distances are **parsecs** and are labels only.
+  validated in [-90, 90] degrees. Catalog distances are **parsecs** and are
+  labels only. Sol uses a separate physical radius and fixed 1 AU distance.
 - The inherited 33-object demo has unspecified coordinate frame, epoch, and
   original measurement provenance. Its approximate values are preserved, not
   promoted to an accurate astrometric reference. It is not magnitude-complete.
@@ -88,7 +89,10 @@ x = -\operatorname{atan2}(\mathbf{s}'\cdot\mathbf{e},\mathbf{s}'\cdot\mathbf{f})
 ```
 
 Axes are displayed in degrees: **right is camera west** and **up is camera
-north**. Each angular axis spans +/-22.5 degrees by default; the forward
+north**. The default square view spans +/-22.5 degrees on each axis. Qt's
+**Focus sky** changes that to a 16:9 viewport, initially 80 by 45 degrees
+from the default view, and restores the previous FOV on exit. Its axes have
+equal angular scale; resizing the panel does not stretch the map. The forward
 hemisphere condition s' dot f > 0 is also required. This is an independent
 two-angular-axis map, not a gnomonic plane, equal-area map, or calibrated
 camera sensor. Rectangular corners have a larger angular separation from the
@@ -114,12 +118,19 @@ Extra columns, including uncertainty columns, are not used by this schema.
 Positive parallax can be converted geometrically as d_pc = 1000/parallax_mas
 or 1/parallax_arcsec. Nonpositive, missing, or invalid parallax yields unknown
 distance. This is not a statistically inferred distance: parallax uncertainty,
-selection, covariance, and distance priors are not modeled. Live Hipparcos
-responses are not archived automatically; archival use requires saving the
-source table independently. Offline tests use controlled masked tables and do
-not verify the network service.
+selection, covariance, and distance priors are not modeled. The Qt application
+caches accepted Hipparcos values, metadata, and the import report as a
+hash-verified local snapshot. This is not an archive of the original VOTable;
+archival use requires saving that source table independently. Offline tests
+use controlled masked tables and do not verify the network service.
 
-## Illustrative display model, retained for baseline parity
+## Illustrative catalog display model, retained for baseline parity
+
+The following marker model applies to catalog objects. Sol instead uses a
+5772 K blackbody with per-ray Doppler transformation and CIE color integration;
+its exposure and tone mapping are separate from angular geometry. See
+[SOLAR_RADIOMETRY.md](SOLAR_RADIOMETRY.md) for its numerical approximations and
+display limits. Neither display provides calibrated screen brightness.
 
 The B-V-to-temperature formula is the inherited Ballesteros approximation
 ([Ballesteros 2012](https://arxiv.org/abs/1201.1809)). Before display only,
@@ -155,7 +166,8 @@ rejected; masked catalog values stay unknown; camera and heading are separate;
 continuous camera rotation retains its triad; drag scaling now uses the actual
 axes rectangle rather than the full widget; UI text identifies approximations.
 Tk worker threads now pass fetch results/errors through a main-thread queue.
-The original documentation JPEGs remain unchanged for a later image milestone.
+The original documentation JPEGs are retained as historical artifacts; the
+README uses regenerated high-resolution figures with portable source scenes.
 
 ## Qt presentation and portable exports (0.2.0.dev2)
 

@@ -48,7 +48,7 @@ the dropdown. The three fixed heading presets remain unchanged.
 With an external catalog, original named selections are explicitly labeled
 navigation references using the inherited demo coordinates and approximate
 values (frame/epoch unspecified). They are not cross-identifications with the
-background catalog. A cyan reference cross marks their location and is not
+background catalog. A neutral reference cross marks their location and is not
 included in the source count. Saved scenes embed the selected reference values
 and provenance separately from the loaded catalog.
 
@@ -79,6 +79,14 @@ prior errors. No global Astroquery configuration is changed. The mirror used
 does not change the catalog epoch or propagate proper motion.
 If a newer scene is opened while a request is pending, the old result is discarded.
 
+On first launch the catalog chooser offers the demo or a local Hipparcos library.
+It can remember the choice. **Load local Hipparcos** reads a verified snapshot;
+**Download / refresh Hipparcos** requests all main-table rows in six columns and
+saves a versioned local copy. Speed, pointing, and rest V changes then use that
+library without downloading it again. A missing or invalid cache asks before a
+download; failed loads preserve the current view. **Application → Catalog
+startup** changes the startup choice. See [CATALOG_LIBRARY.md](CATALOG_LIBRARY.md).
+
 **Save scene** writes a new JSON file and refuses an existing filename. **Open
 scene** loads its embedded catalog and settings without reading the original
 source path. **Export** creates a new versioned folder with figures, arrays, and
@@ -90,7 +98,13 @@ For Sol, use **Frame solar disk** and the optional tracking and heading controls
 in its inspector. The fixed teaching geometry defaults to Sun RA=0°, Dec=0° at
 1 AU; it does not change distance as speed changes. Zoom reaches 0.001° to show
 small high-speed solar disks. See [SOLAR_MODEL.md](SOLAR_MODEL.md) for constants,
-ray geometry, occultation, sampling, and the neutral-fill radiometry limit.
+ray geometry, occultation, and sampling. Sol's color and surface brightness use
+a uniform ideal 5772 K blackbody shifted separately along each apparent ray.
+**Display exposure** and **Fit exposure once** alter display mapping without
+resizing the disk or changing physical radiance. Very redshifted visible light
+can be nearly black. See [SOLAR_RADIOMETRY.md](SOLAR_RADIOMETRY.md) for the spectrum,
+tone mapping, and scientific limits. Older neutral-fill scenes retain that fill
+until **Doppler spectrum** is enabled.
 
 **Focus sky** hides the panels and sets each sky viewport to 16:9, keeping equal
 pixels per angular degree. The existing projection has independent atan2 axes,
@@ -103,3 +117,8 @@ to 90°. Zoom keeps the ratio. Leaving focus restores the prior FOV; opening a
 scene or resetting exits focus before applying that scene's settings. Comparison
 uses the same angular limits and camera in both panels, each at 16:9. Exports
 and saved scenes retain the actual horizontal/vertical FOV.
+
+The thin window surround is outside the sky projection. The long speed slider
+uses the same rapidity mapping as the sidebar, and both stay synchronized.
+Wide focused single-panel windows show γ/β and catalog readouts beside the sky;
+smaller windows retain the top cards. These controls do not stretch the map.

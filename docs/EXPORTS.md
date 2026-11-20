@@ -7,8 +7,11 @@ angular radius in radians, solid angle in steradians, Doppler values, and a
 candidate-aligned occultation mask. Stellar visible arrays reflect that mask;
 original catalog data and pre-visibility directions/Doppler arrays are retained.
 The verifier replays the solar-aware view. [Solar model](SOLAR_MODEL.md) describes
-the 720 limb samples and 401×401 display-mask fallback; no stellar resampling
-or calibrated solar radiometry is performed.
+the 720 limb samples and 401×401 display-mask fallback. With solar radiometry
+enabled, NPZ also stores per-ray Doppler, color, and radiance arrays with their
+inside-disk mask. The texture uses numerical lookup interpolation and display
+sampling described in [SOLAR_RADIOMETRY.md](SOLAR_RADIOMETRY.md); this is an
+idealized blackbody model, not calibrated screen photometry.
 
 Version 0.2.2 embeds a selected named reference separately from the sky catalog,
 including its full values and provenance. Reference crosses are annotations and
@@ -30,8 +33,8 @@ also request other sizes within the documented 7680-pixel limits.
 | `scene_data.npz` | Candidate directions, D, mu, projection, visibility, display proxy, core marker areas, RGB, and visible original row IDs |
 
 All figures state heading, camera, FOV, speed, selection, and display
-approximations. Source/catalog order is preserved. There is no numerical
-smoothing, interpolation, resampling, or uncertainty propagation. Raster
+approximations. Source/catalog order is preserved. Stellar arrays undergo no
+numerical smoothing, interpolation, resampling, or uncertainty propagation. Raster
 antialiasing and glow are presentation effects.
 
 JSON encodes unknown B−V and distance values as `null`; reopening restores NaN.
@@ -54,8 +57,7 @@ Reopen an exported `scene.json` with **Open scene**. For a reproducibility check
 from the checkout root:
 
 ```powershell
-$sciencePython = 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe'
-& $sciencePython -X utf8 .\tools\verify_export.py 'C:\path\to\scene.json' `
+.\.venv\Scripts\python.exe -X utf8 .\tools\verify_export.py 'C:\path\to\scene.json' `
     --rerender-parent 'C:\path\to\new_reproduction_folder'
 ```
 

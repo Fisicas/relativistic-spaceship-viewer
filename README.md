@@ -4,9 +4,9 @@ Explore the instantaneous apparent sky of an observer moving at a significant
 fraction of the speed of light. Aberration changes the directions; the Doppler
 factor changes the frequency. The physics stays visible alongside the view.
 
-**0.2.6 — local release candidate, unpublished.** The Qt interface, reproducible
-exports, Windows installer, and managed updater are implemented. The prepared
-Windows binaries are unsigned; no GitHub release has been published.
+**Version 0.2.6.** A Qt interface, reproducible exports, Windows installer, and
+managed updater. Windows binaries are unsigned. Published installers and update
+packages are distributed through [GitHub Releases](https://github.com/Fisicas/relativistic-spaceship-viewer/releases).
 
 ![Relativistic Spaceship Viewer — charcoal instrument theme and actual simulated sky](docs/branding/social-preview.png)
 
@@ -83,26 +83,28 @@ For Windows without Python or Git, run the prepared
 current user and adds a Start menu shortcut. In a checkout, `Install_Viewer.cmd`
 uses a prepared installer in `dist\release`, or downloads the latest published
 stable installer after verifying its GitHub asset digest. A new online release
-will become available only after publication is separately authorized.
+becomes available only when its stable GitHub release and assets are published;
+pushing source commits alone does not distribute an app update.
 
 Installed builds can check stable releases from **Application → Check for
 updates**. Updates are verified and tested in a separate version folder, then
 activated after the viewer closes; the previous build remains available for
 rollback. See [installation, updates, and removal](docs/INSTALLATION.md).
 
-For source development, keep the following options:
-
-On the author's Windows profile, from PowerShell:
+To run from a source checkout on Windows, open PowerShell in the repository
+root and create a separate environment:
 
 ```powershell
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 `
-  'C:\Users\nelso\Desktop\Repos\relativistic-spaceship-viewer\relativistic_spaceship_viewer.py'
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install ".[catalogs]"
+.\.venv\Scripts\python.exe -X utf8 -m spaceship_viewer
 ```
 
-For another machine, use a project-specific Python environment with the
-dependencies in `requirements.txt` (NumPy, Matplotlib, and PySide6). The tested
+Omit `[catalogs]` if optional VizieR downloads are not needed. The equivalent
+dependency lists are `requirements.txt` and `requirements-optional.txt`. The tested
 environment is Python 3.12.10, NumPy 2.5.3, Matplotlib 3.11.2, PySide6 6.11.2,
-and Windows 11. Optional VizieR access uses `requirements-optional.txt`.
+and Windows 11. Pinned reproduction/build instructions and the author's existing
+environment command are in [DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 The existing launch filename is retained; `python -m spaceship_viewer` also opens
 the Qt app. `python relativistic_spaceship_viewer.py --legacy-tk` opens the
@@ -128,7 +130,7 @@ opposite to the observer-to-source direction.
 This is a directional, instantaneous special-relativistic model, not a voyage
 simulation. The B−V-to-RGB map and optional D³ marker-area mapping are
 illustrative, not calibrated photometry. The magnitude cut is on rest-frame V
-before the boost. Distances are labels; M42 is an extended-object point
+before the boost. Catalog distances are labels; M42 is an extended-object point
 placeholder. The inherited catalog's original measurement provenance, frame,
 and epoch are unspecified. No uncertainty propagation, proper motion,
 acceleration, observer translation, or time-of-flight calculation is performed.
@@ -142,7 +144,7 @@ catalogs. [Exports](docs/EXPORTS.md) explains reproducibility and file contents.
 Run from the checkout root:
 
 ```powershell
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -v
 ```
 
 The numerical tests include an independent photon four-momentum boost,

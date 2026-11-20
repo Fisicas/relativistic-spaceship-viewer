@@ -31,14 +31,32 @@ version string does not mean that a Git tag or public release exists.
 
 1. Review the complete local diff, scientific limitations, license notices,
    unsigned-binary status, clean-machine results, and release notes.
-2. Commit the reviewed source locally. Create a local `v0.2.3` tag only after
+2. Commit the reviewed source locally. Create a local `v0.2.6` tag only after
    resolving the final source/release provenance.
-3. With separate user authorization, push the branch/tag and allow CI to run.
+3. The user pushes the reviewed source and tag. Wait for CI to pass on the
+   actual pushed commit; local checks do not establish a GitHub Actions result.
 4. Upload the exact named Windows ZIP/setup plus wheel/source/hashes to the
    GitHub release. Stable update discovery expects the documented asset names
    and GitHub-generated SHA-256 digests.
 5. Test downloading from the actual published release on another Windows host,
    including offline launch, update, rollback, and independent figure export.
 
-Step 3 and later are outside the current authorization. No pushes, tags on the
-remote, release uploads, or release creation are done in this task.
+The user performs steps 3 and later. No branch push, tag creation/push, release
+upload, release creation, or repository-setting change is done by the agent.
+
+For **v0.2.6**, the required published Windows assets are:
+
+- `relativistic-spaceship-viewer-0.2.6-windows-x64-setup.exe` for initial installs.
+- `relativistic-spaceship-viewer-0.2.6-windows-x64.zip` for installed-app updates.
+
+Also attach the reviewed wheel, exact source ZIP, release/source manifests,
+runtime lock, release notes, and SHA256SUMS. Use the single final asset directory
+identified in the handoff; do not mix older candidate folders. GitHub-generated
+source archives alone are not the installer or managed-update package.
+`dist/release` is intentionally ignored by Git, so pushing source does not upload
+these files. Publish a stable release after attaching them; the updater ignores
+drafts and prereleases. The user's existing local 0.2.6 will correctly offer no
+update to the same version; later public updates require a higher version.
+
+Upload `docs/branding/social-preview.png` separately in repository Settings →
+Social preview. Its README reference does not set that repository setting.
